@@ -14,7 +14,7 @@ public class CommsTemplate {
         rc = r;
     }
 
-    public static void initTurns() throws GameActionException {
+    public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
         buf1 = rc.readSharedArray(1);
         buf2 = rc.readSharedArray(2);
@@ -81,7 +81,7 @@ public class CommsTemplate {
         buf63 = rc.readSharedArray(63);
     }
 
-    public static void endsTurns() throws GameActionException {
+    public static void push() throws GameActionException {
         switch (dirty0) {case 1: rc.writeSharedArray(0, buf0); dirty0 = 0;}
         switch (dirty1) {case 1: rc.writeSharedArray(1, buf1); dirty1 = 0;}
         switch (dirty2) {case 1: rc.writeSharedArray(2, buf2); dirty2 = 0;}

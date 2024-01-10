@@ -11,13 +11,14 @@ public class Comms {
     private static int dirty0,dirty1,dirty2,dirty3,dirty4,dirty5,dirty6,dirty7,dirty8,dirty9,dirty10,dirty11,dirty12,dirty13,dirty14,dirty15,dirty16,dirty17,dirty18,dirty19,dirty20,dirty21,dirty22,dirty23,dirty24,dirty25,dirty26,dirty27,dirty28,dirty29,dirty30,dirty31,dirty32,dirty33,dirty34,dirty35,dirty36,dirty37,dirty38,dirty39,dirty40,dirty41,dirty42,dirty43,dirty44,dirty45,dirty46,dirty47,dirty48,dirty49,dirty50,dirty51,dirty52,dirty53,dirty54,dirty55,dirty56,dirty57,dirty58,dirty59,dirty60,dirty61,dirty62,dirty63;
 
     public final static int DUCKS_SLOTS = 50;
+    public final static int HQ_SLOTS = 3;
     public final static int SYMMETRY_SLOTS = 1;
 
     public static void init(RobotController r) {
         rc = r;
     }
 
-    public static void initTurns() throws GameActionException {
+    public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
         buf1 = rc.readSharedArray(1);
         buf2 = rc.readSharedArray(2);
@@ -84,7 +85,7 @@ public class Comms {
         buf63 = rc.readSharedArray(63);
     }
 
-    public static void endsTurns() throws GameActionException {
+    public static void push() throws GameActionException {
         switch (dirty0) {case 1: rc.writeSharedArray(0, buf0); dirty0 = 0;}
         switch (dirty1) {case 1: rc.writeSharedArray(1, buf1); dirty1 = 0;}
         switch (dirty2) {case 1: rc.writeSharedArray(2, buf2); dirty2 = 0;}
@@ -680,40 +681,106 @@ public class Comms {
         }
     }
 
+    public static int readHqLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf3 & 16380) >>> 2;
+            case 1: return ((buf3 & 3) << 10) + ((buf4 & 65472) >>> 6);
+            case 2: return ((buf4 & 63) << 6) + ((buf5 & 64512) >>> 10);
+            default:
+                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm read param not in range");
+        }
+    }
+
+    public static void writeHqLoc(int idx, int value) throws GameActionException {assert value >= 0; assert value < 4096;
+        switch (idx) {
+            case 0:
+                buf3 = (buf3 & 49155) | (value << 2);
+                dirty3 = 1;
+                break;
+            case 1:
+                buf3 = (buf3 & 65532) | ((value & 3072) >>> 10);
+                dirty3 = 1;
+                buf4 = (buf4 & 63) | ((value & 1023) << 6);
+                dirty4 = 1;
+                break;
+            case 2:
+                buf4 = (buf4 & 65472) | ((value & 4032) >>> 6);
+                dirty4 = 1;
+                buf5 = (buf5 & 1023) | ((value & 63) << 10);
+                dirty5 = 1;
+                break;
+            default:
+                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm write param not in range");
+        }
+    }
+
+    public static int readHqAll(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf3 & 16380) >>> 2;
+            case 1: return ((buf3 & 3) << 10) + ((buf4 & 65472) >>> 6);
+            case 2: return ((buf4 & 63) << 6) + ((buf5 & 64512) >>> 10);
+            default:
+                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm read param not in range");
+        }
+    }
+
+    public static void writeHqAll(int idx, int value) throws GameActionException {assert value >= 0; assert value < 4096;
+        switch (idx) {
+            case 0:
+                buf3 = (buf3 & 49155) | (value << 2);
+                dirty3 = 1;
+                break;
+            case 1:
+                buf3 = (buf3 & 65532) | ((value & 3072) >>> 10);
+                dirty3 = 1;
+                buf4 = (buf4 & 63) | ((value & 1023) << 6);
+                dirty4 = 1;
+                break;
+            case 2:
+                buf4 = (buf4 & 65472) | ((value & 4032) >>> 6);
+                dirty4 = 1;
+                buf5 = (buf5 & 1023) | ((value & 63) << 10);
+                dirty5 = 1;
+                break;
+            default:
+                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm write param not in range");
+        }
+    }
+
     public static int readSymmetryVertical() throws GameActionException {
-        return (buf3 & 8192) >>> 13;
+        return (buf5 & 512) >>> 9;
     }
 
     public static void writeSymmetryVertical(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 57343) | (value << 13);
-        dirty3 = 1;
+        buf5 = (buf5 & 65023) | (value << 9);
+        dirty5 = 1;
     }
 
     public static int readSymmetryHorizontal() throws GameActionException {
-        return (buf3 & 4096) >>> 12;
+        return (buf5 & 256) >>> 8;
     }
 
     public static void writeSymmetryHorizontal(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 61439) | (value << 12);
-        dirty3 = 1;
+        buf5 = (buf5 & 65279) | (value << 8);
+        dirty5 = 1;
     }
 
     public static int readSymmetryRotational() throws GameActionException {
-        return (buf3 & 2048) >>> 11;
+        return (buf5 & 128) >>> 7;
     }
 
     public static void writeSymmetryRotational(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 63487) | (value << 11);
-        dirty3 = 1;
+        buf5 = (buf5 & 65407) | (value << 7);
+        dirty5 = 1;
     }
 
     public static int readSymmetryAll() throws GameActionException {
-        return (buf3 & 14336) >>> 11;
+        return (buf5 & 896) >>> 7;
     }
 
     public static void writeSymmetryAll(int value) throws GameActionException {assert value >= 0; assert value < 8;
-        buf3 = (buf3 & 51199) | (value << 11);
-        dirty3 = 1;
+        buf5 = (buf5 & 64639) | (value << 7);
+        dirty5 = 1;
     }
 
     // BUFFER POOL READ AND WRITE METHODS

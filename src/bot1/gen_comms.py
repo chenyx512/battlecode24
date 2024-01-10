@@ -11,7 +11,13 @@ SCHEMA = {
     'ducks': {
         'slots': 50,
         'bits': {
-            'alive': 1
+            'alive': 1,
+        }
+    },
+    'HQ': {
+        'slots': 3,
+        'bits': {
+            'loc': 12,
         }
     },
     'symmetry': {

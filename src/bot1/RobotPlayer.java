@@ -6,12 +6,12 @@ import bot1.fast.*;
 public strictfp class RobotPlayer {
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
-        Robot r = new Robot(rc);
-
         FastMath.initRand(rc);
         Comms.init(rc);
         PathFinder.init(rc);
         Debug.init(rc);
+
+        Robot r = new Robot(rc);
 
         while (true) {
             try {
