@@ -12,6 +12,9 @@ public class Robot extends RobotPlayer {
     public static int duckID;
     public static MapLocation homeSpawn;
 
+    public static int baseHeal = SkillType.HEAL.skillEffect;
+    public static int attackHP, healHP;
+
     static void init() throws GameActionException {
         initHQLocs();
     }
@@ -19,6 +22,10 @@ public class Robot extends RobotPlayer {
     static void initTurn() throws GameActionException {
         Comms.pull();
         MapRecorder.updateSym();
+
+        // updates self stats
+        attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
+        healHP = Math.round(baseHeal * ((float) SkillType.HEAL.getSkillEffect(rc.getLevel(SkillType.HEAL)) / 100 + 1));
 
         if (!rc.isSpawned()) {
             for (MapLocation loc : rc.getAllySpawnLocations()) {
@@ -35,14 +42,18 @@ public class Robot extends RobotPlayer {
         if (!rc.isSpawned())
             return;
 
+        if (Micro.act())
+            return;
+
         MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
         if (crumbs.length > 0) {
             targetLoc = Util.getClosestLoc(crumbs);
-        } else {
+        } else if (rc.getRoundNum() <= 180) {
             targetLoc = Explorer.getUnseenExploreTarget();
+        } else {
+            targetLoc = oppSpawnCenters[duckID];
         }
 
-//        targetLoc = oppSpawnCenters[duckID];
         if (targetLoc != null) {
             PathFinder.move(targetLoc);
         }
@@ -105,5 +116,11 @@ public class Robot extends RobotPlayer {
         int dis1 = mySpawnCenters[1].distanceSquaredTo(loc);
         int dis2 = mySpawnCenters[2].distanceSquaredTo(loc);
         return Math.min(Math.min(dis0, dis1), dis2);
+    }
+
+    public static void tryMove(Direction dir) throws GameActionException {
+        if (dir == Direction.CENTER)
+            return;
+        rc.move(dir);
     }
 }
