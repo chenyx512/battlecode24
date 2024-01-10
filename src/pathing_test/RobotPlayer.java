@@ -1,33 +1,31 @@
 package pathing_test;
 
-import battlecode.common.*;
-import bot1.Comms;
-import bot1.Debug;
-import bot1.PathFinder;
-import bot1.Robot;
-import bot1.fast.*;
+import battlecode.common.Clock;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
+import pathing_test.fast.FastMath;
 
 public strictfp class RobotPlayer {
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
-        bot1.Robot r = new Robot(rc);
+        Robot r = new Robot(rc);
 
         FastMath.initRand(rc);
         Comms.init(rc);
         PathFinder.init(rc);
-        bot1.Debug.init(rc);
+        Debug.init(rc);
 
         while (true) {
             try {
                 int round = rc.getRoundNum();
                 r.initTurn();
-                bot1.Debug.bytecodeDebug += " BCINIT=" + Clock.getBytecodeNum();
+                Debug.bytecodeDebug += " BCINIT=" + Clock.getBytecodeNum();
                 r.play();
-                bot1.Debug.bytecodeDebug += "  BCPLAY=" + Clock.getBytecodeNum();
+                Debug.bytecodeDebug += "  BCPLAY=" + Clock.getBytecodeNum();
                 r.endTurn();
                 int roundEnd = rc.getRoundNum();
                 if (round < roundEnd){
-                    System.out.println("overrun " + round + " " + rc.getLocation().toString() + bot1.Debug.bytecodeDebug);
+                    System.out.println("overrun " + round + " " + rc.getLocation().toString() + Debug.bytecodeDebug);
                 }
 
                 Debug.flush();

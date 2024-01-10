@@ -1,6 +1,8 @@
 package pathing_test.fast;
 
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 //awful hacks for faster math
 public class FastMath {

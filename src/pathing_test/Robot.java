@@ -1,10 +1,9 @@
 package pathing_test;
 
-import battlecode.common.*;
-import bot1.Comms;
-import bot1.Debug;
-import bot1.PathFinder;
-import bot1.fast.*;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import pathing_test.fast.FastMath;
 
 public class Robot {
     static RobotController rc;
@@ -20,13 +19,13 @@ public class Robot {
     }
 
     void initTurn() throws GameActionException {
-        bot1.Comms.initTurns();
+        Comms.initTurns();
         if (!rc.isSpawned()) {
-            if(bot1.Comms.readDucksAlive(0) == 0) {
+            if(Comms.readDucksAlive(0) == 0) {
                 for (MapLocation loc : rc.getAllySpawnLocations()) {
                     if (rc.canSpawn(loc)) {
                         rc.spawn(loc);
-                        bot1.Comms.writeDucksAlive(0, 1);
+                        Comms.writeDucksAlive(0, 1);
                         break;
                     }
                 }
@@ -44,8 +43,8 @@ public class Robot {
             targetLoc = new MapLocation(FastMath.rand256() % W, FastMath.rand256() % H);
             targetRound = rc.getRoundNum();
         }
-        bot1.Debug.setIndicatorDot(bot1.Debug.INFO, targetLoc, 255, 0, 0);
-        bot1.Debug.printString(Debug.INFO, String.format("%d %d", targetLoc.x, targetLoc.y));
+        Debug.setIndicatorDot(Debug.INFO, targetLoc, 255, 0, 0);
+        Debug.printString(Debug.INFO, String.format("%d %d", targetLoc.x, targetLoc.y));
         PathFinder.move(targetLoc);
     }
 

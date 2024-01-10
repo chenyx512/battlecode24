@@ -1,7 +1,6 @@
 package pathing_test;
 
-import battlecode.common.*;
-import bot1.fast.*;
+import battlecode.common.MapLocation;
 
 public class Util {
     static int distance(MapLocation A, MapLocation B) {

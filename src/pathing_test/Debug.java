@@ -1,7 +1,8 @@
 // shamelessly copied from 4 musketeer https://github.com/maxwelljones14/BattleCode2023/blob/main/src/MPWorking/Debug.java
 package pathing_test;
 
-import battlecode.common.*;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class Debug {
     static final boolean VERBOSE = true;

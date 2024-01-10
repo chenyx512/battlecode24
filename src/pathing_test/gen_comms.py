@@ -4,8 +4,8 @@
 
 #! /usr/bin/env python3
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 SCHEMA = {
     'ducks': {
@@ -161,8 +161,8 @@ if __name__ == '__main__':
 
     # package_name = len(sys.argv) > 1 and sys.argv[1] or 'bot1'
     package_name = 'bot1'
-    template_file = Path('./CommsTemplate.java')
-    out_file = Path('./Comms.java')
+    template_file = Path('CommsTemplate.java')
+    out_file = Path('Comms.java')
 
     if len(sys.argv) > 1 and sys.argv[1]:
         print("Generating Deploy mode")

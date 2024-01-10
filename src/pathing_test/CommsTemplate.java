@@ -1,6 +1,7 @@
 package pathing_test;
 
-import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
 
 public class CommsTemplate {
 

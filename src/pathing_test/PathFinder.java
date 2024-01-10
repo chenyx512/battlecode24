@@ -1,8 +1,7 @@
 package pathing_test;
 
 import battlecode.common.*;
-import bot1.Util;
-import bot1.fast.*;
+import pathing_test.fast.FastIntSet;
 
 public class PathFinder {
     private static RobotController rc;
@@ -44,7 +43,7 @@ public class PathFinder {
                 // If I'm at a minimum distance to the target, I'm free!
                 MapLocation myLoc = rc.getLocation();
                 // int d = myLoc.distanceSquaredTo(target);
-                int d = bot1.Util.distance(myLoc, target);
+                int d = Util.distance(myLoc, target);
                 if (d < minDistToEnemy) {
                     // Debug.println("New min dist: " + d + " Old: " + minDistToEnemy, id);
                     resetPathfinding();
@@ -145,7 +144,7 @@ public class PathFinder {
                             MapLocation locL = myLoc.add(dirL);
                             MapLocation locR = myLoc.add(dirR);
 
-                            int lDist = bot1.Util.distance(target, locL);
+                            int lDist = Util.distance(target, locL);
                             int rDist = Util.distance(target, locR);
                             int lDistSq = target.distanceSquaredTo(locL);
                             int rDistSq = target.distanceSquaredTo(locR);

@@ -2,7 +2,9 @@
 DO NOT MODIFY THIS FILE DIRECTLY */
 package pathing_test;
 
-import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.GameActionExceptionType;
+import battlecode.common.RobotController;
 
 public class Comms {
     private static RobotController rc;
