@@ -8,12 +8,12 @@ from pathlib import Path
 import sys
 
 SCHEMA = {
-    'ducks': {
-        'slots': 50,
-        'bits': {
-            'alive': 1,
-        }
-    },
+    # 'ducks': {
+    #     'slots': 50,
+    #     'bits': {
+    #         'alive': 1,
+    #     }
+    # },
     'HQ': {
         'slots': 3,
         'bits': {
@@ -26,6 +26,12 @@ SCHEMA = {
             'sym': 3,
         }
     },
+    'attackTarget': {
+        'slots': 1,
+        'bits': {
+            'target': 2,
+        }
+    }
 }
 
 def gen_constants():

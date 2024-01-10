@@ -12,6 +12,10 @@ public class MapRecorder extends RobotPlayer {
     // bit 0b100 means rotational eliminated, 0b010 vertical, 0b001 horizontal
     private static int symmetry;
 
+    public static boolean getPassible(MapLocation loc) {
+        return (vals[Util.loc2int(loc)] & WALL_BIT) > 0;
+    }
+
     public static int getData(MapLocation loc) {
         return vals[Util.loc2int(loc)];
     }

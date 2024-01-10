@@ -9,6 +9,7 @@ public class PathFinder extends RobotPlayer{
     static public void move(MapLocation loc) {
         if (!rc.isMovementReady())
             return;
+        Debug.printString(Debug.PATHFINDING, String.format("move%d,%d", loc.x, loc.y));
         target = loc;
         BugNav.move();
     }

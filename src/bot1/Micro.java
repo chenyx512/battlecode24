@@ -6,6 +6,7 @@ import java.util.function.ToDoubleFunction;
 
 public class Micro extends Robot {
     private static RobotInfo[] nearbyEnemies, nearbyFriends;
+    private static RobotInfo bestTarget, closestEnemy;
 
     static boolean act() throws GameActionException {
         // assumptions
@@ -14,8 +15,9 @@ public class Micro extends Robot {
         nearbyEnemies = rc.senseNearbyRobots(-1, oppTeam);
         nearbyFriends = rc.senseNearbyRobots(-1, myTeam);
 
-        RobotInfo bestTarget = null;
-        RobotInfo closestEnemy = null;
+        bestTarget = null;
+        closestEnemy = null;
+
         double bestScore = Double.MIN_VALUE;
         double closestDis = Double.MAX_VALUE;
         for (RobotInfo r : nearbyEnemies) {
@@ -33,25 +35,21 @@ public class Micro extends Robot {
 
         if (nearbyEnemies.length == 0) {
             // currently healing isn't too profitable, dying is faster regain of health, do not go out of way to heal
-            RobotInfo healingTarget = getHealingTarget();
-            if (healingTarget != null && rc.canHeal(healingTarget.location)) {
-                rc.heal(healingTarget.location);
-            }
+            tryHeal();
             return false;
         } else {
-            if (rc.canAttack(bestTarget.location)) {
-                rc.attack(bestTarget.location);
-            }
+            tryAttack();
             if (rc.isActionReady()) {
                 int discount = bestTarget.health <= attackHP? 1 : 0;
                 if (nearbyEnemies.length - discount <= nearbyFriends.length) {
                     MapLocation targetLocation = bestTarget.location;
                     tryMove(getBestMoveDirection(loc -> getScoreForSingleEnemy(loc, targetLocation)));
-                    if (rc.canAttack(bestTarget.location)) {
-                        rc.attack(bestTarget.location);
-                    }
+                    tryAttack();
+                    tryHeal();
                 } else if (!allowedToStandStill(closestEnemy.location)) {
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
+                } else { // if I can stand still I can also heal...
+                    tryHeal();
                 }
             } else {
                 if (!allowedToStandStill(closestEnemy.location)) {
@@ -59,6 +57,21 @@ public class Micro extends Robot {
                 }
             }
             return true;
+        }
+    }
+
+    private static void tryAttack() throws GameActionException {
+        if (rc.canAttack(bestTarget.location)) {
+            rc.attack(bestTarget.location);
+        }
+    }
+
+    private static void tryHeal() throws GameActionException {
+        if (!rc.isActionReady())
+            return;
+        RobotInfo healingTarget = getHealingTarget();
+        if (healingTarget != null && rc.canHeal(healingTarget.location)) {
+            rc.heal(healingTarget.location);
         }
     }
 
@@ -246,19 +259,19 @@ public class Micro extends Robot {
         MapLocation a = enemyLocation.add(directionToUs);
         MapLocation b = enemyLocation.add(directionToUs.rotateLeft());
         MapLocation c = enemyLocation.add(directionToUs.rotateRight());
-        if (rc.getLocation().isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED)) {
+        if (MapRecorder.getPassible(a) && rc.getLocation().isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
             if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
             }
         }
-        if (rc.getLocation().isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED)) {
+        if (MapRecorder.getPassible(b) && rc.getLocation().isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
             if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
             }
         }
-        if (rc.getLocation().isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED)) {
+        if (MapRecorder.getPassible(c) && rc.getLocation().isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
             if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
