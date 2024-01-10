@@ -747,30 +747,12 @@ public class Comms {
         }
     }
 
-    public static int readSymmetryVertical() throws GameActionException {
-        return (buf5 & 512) >>> 9;
+    public static int readSymmetrySym() throws GameActionException {
+        return (buf5 & 896) >>> 7;
     }
 
-    public static void writeSymmetryVertical(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf5 = (buf5 & 65023) | (value << 9);
-        dirty5 = 1;
-    }
-
-    public static int readSymmetryHorizontal() throws GameActionException {
-        return (buf5 & 256) >>> 8;
-    }
-
-    public static void writeSymmetryHorizontal(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf5 = (buf5 & 65279) | (value << 8);
-        dirty5 = 1;
-    }
-
-    public static int readSymmetryRotational() throws GameActionException {
-        return (buf5 & 128) >>> 7;
-    }
-
-    public static void writeSymmetryRotational(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf5 = (buf5 & 65407) | (value << 7);
+    public static void writeSymmetrySym(int value) throws GameActionException {assert value >= 0; assert value < 8;
+        buf5 = (buf5 & 64639) | (value << 7);
         dirty5 = 1;
     }
 

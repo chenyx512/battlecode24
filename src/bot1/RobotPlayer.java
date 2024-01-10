@@ -10,6 +10,7 @@ public strictfp class RobotPlayer {
         Comms.init(rc);
         PathFinder.init(rc);
         Debug.init(rc);
+        MapRecorder.init(rc);
 
         Robot r = new Robot(rc);
 

@@ -23,9 +23,7 @@ SCHEMA = {
     'symmetry': {
         'slots': 1,
         'bits': {
-            'vertical': 1,
-            'horizontal': 1,
-            'rotational': 1,
+            'sym': 3,
         }
     },
 }
