@@ -3,7 +3,7 @@ package bot1;
 
 import battlecode.common.*;
 
-public class Debug {
+public class Debug extends RobotPlayer {
     static final boolean VERBOSE = true;
     public static final boolean INFO = true;
     public static final boolean PATHFINDING = true;
@@ -11,12 +11,9 @@ public class Debug {
 
     public static String bytecodeDebug = new String();
 
-    private static RobotController rc;
-
     private static StringBuilder sb;
 
-    static void init(RobotController r) {
-        rc = r;
+    static void init() {
         sb = new StringBuilder();
     }
 

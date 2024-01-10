@@ -4,24 +4,36 @@ import battlecode.common.*;
 import bot1.fast.*;
 
 public strictfp class RobotPlayer {
-    @SuppressWarnings("unused")
-    public static void run(RobotController rc) throws GameActionException {
-        FastMath.initRand(rc);
-        Comms.init(rc);
-        PathFinder.init(rc);
-        Debug.init(rc);
-        MapRecorder.init(rc);
+    static RobotController rc;
+    static int H, W;
+    static Team myTeam, oppTeam;
+    static int myTeamID, oppTeamID;
 
-        Robot r = new Robot(rc);
+
+    @SuppressWarnings("unused")
+    public static void run(RobotController r) throws GameActionException {
+        rc = r; //this should always go first
+
+        H = rc.getMapHeight();
+        W = rc.getMapWidth();
+
+        myTeam = rc.getTeam();
+        oppTeam = myTeam.opponent();
+        myTeamID = myTeam == Team.A? 1 : 2;
+        oppTeamID = 3 - myTeamID;
+
+        FastMath.initRand(rc);
+        Debug.init();
+        Robot.init();
 
         while (true) {
             try {
                 int round = rc.getRoundNum();
-                r.initTurn();
+                Robot.initTurn();
                 Debug.bytecodeDebug += " BCINIT=" + Clock.getBytecodeNum();
-                r.play();
+                Robot.play();
                 Debug.bytecodeDebug += "  BCPLAY=" + Clock.getBytecodeNum();
-                r.endTurn();
+                Robot.endTurn();
                 int roundEnd = rc.getRoundNum();
                 if (round < roundEnd){
                     System.out.println("overrun " + round + " " + rc.getLocation().toString() + Debug.bytecodeDebug);

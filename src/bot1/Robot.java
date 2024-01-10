@@ -1,39 +1,22 @@
 package bot1;
 
 import battlecode.common.*;
-import bot1.fast.*;
 
-public class Robot {
-    private static RobotController rc;
-    private static int H, W;
-
+public class Robot extends RobotPlayer {
     private static MapLocation targetLoc = null;
     private static int targetRound = -1;
 
     public static MapLocation[] mySpawnCenters = new MapLocation[3];
     public static MapLocation[] oppSpawnCenters = new MapLocation[3];
-    public static Team myTeam, oppTeam;
-    public static int myTeamID, oppTeamID;
 
     public static int duckID;
+    public static MapLocation homeSpawn;
 
-    Robot (RobotController rc) throws GameActionException {
-        this.rc = rc; //this should always go first
-
-        H = rc.getMapHeight();
-        W = rc.getMapWidth();
-
-        myTeam = rc.getTeam();
-        oppTeam = myTeam.opponent();
-        myTeamID = myTeam == Team.A? 1 : 2;
-        oppTeamID = 3 - myTeamID;
-
-        duckID = FastMath.rand256() % GameConstants.NUMBER_FLAGS;
-
+    static void init() throws GameActionException {
         initHQLocs();
     }
 
-    void initTurn() throws GameActionException {
+    static void initTurn() throws GameActionException {
         Comms.pull();
         MapRecorder.updateSym();
 
@@ -41,26 +24,38 @@ public class Robot {
             for (MapLocation loc : rc.getAllySpawnLocations()) {
                 if (rc.canSpawn(loc)) {
                     rc.spawn(loc);
+                    homeSpawn = Util.getClosestLoc(mySpawnCenters);
                     break;
                 }
             }
         }
     }
 
-    void play() throws GameActionException {
+    static void play() throws GameActionException {
         if (!rc.isSpawned())
             return;
 
-        targetLoc = oppSpawnCenters[duckID];
-        PathFinder.move(targetLoc);
+        MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
+        if (crumbs.length > 0) {
+            targetLoc = Util.getClosestLoc(crumbs);
+        } else {
+            targetLoc = Explorer.getUnseenExploreTarget();
+        }
+
+//        targetLoc = oppSpawnCenters[duckID];
+        if (targetLoc != null) {
+            PathFinder.move(targetLoc);
+        }
     }
 
-    void endTurn() throws GameActionException {
+    static void endTurn() throws GameActionException {
         Comms.push();
-        MapRecorder.recordSym(2000);
+        if (rc.isSpawned()) {
+            MapRecorder.recordSym(2000);
+        }
     }
 
-    void initHQLocs() throws GameActionException {
+    static void initHQLocs() throws GameActionException {
         Comms.pull();
         if (Comms.readHqLoc(0) == 0) {
             MapLocation[] locations = rc.getAllySpawnLocations();

@@ -181,8 +181,8 @@ if __name__ == '__main__':
             for line in t:
                 if 'package bot1;' in line:
                     f.write(f"package {package_name};\n")
-                elif 'public class CommsTemplate {' in line:
-                    f.write('public class Comms {')
+                elif 'CommsTemplate' in line:
+                    f.write(line.replace('CommsTemplate', 'Comms'))
                 elif '// MAIN READ AND WRITE METHODS' in line:
                     f.write(gen())
                 elif '// CONSTS' in line:

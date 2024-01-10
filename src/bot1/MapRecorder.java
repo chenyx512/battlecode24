@@ -2,7 +2,7 @@ package bot1;
 
 import battlecode.common.*;
 
-public class MapRecorder {
+public class MapRecorder extends RobotPlayer {
     public static final char SEEN_BIT = 1;
     public static final char WALL_BIT = 1 << 1;
 
@@ -12,13 +12,8 @@ public class MapRecorder {
     // bit 0b100 means rotational eliminated, 0b010 vertical, 0b001 horizontal
     private static int symmetry;
 
-    private static RobotController rc;
-    private static int H, W;
-
-    public static void init(RobotController r) {
-        rc = r;
-        W = rc.getMapWidth();
-        H = rc.getMapHeight();
+    public static int getData(MapLocation loc) {
+        return vals[Util.loc2int(loc)];
     }
 
     // record what we can sense on the map, perform sym check if needed

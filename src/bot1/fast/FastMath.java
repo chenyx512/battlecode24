@@ -24,6 +24,11 @@ public class FastMath {
         return lookupRand256.charAt(randIndex);
     }
 
+    public static float fakefloat() {
+        float rv = (float) (rand256() / 256.0);
+        return rv;
+    }
+
     public static MapLocation addVec(MapLocation a, MapLocation b) {
         return new MapLocation(a.x+b.x, a.y+b.y);
     }

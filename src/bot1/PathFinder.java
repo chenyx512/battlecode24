@@ -3,13 +3,8 @@ package bot1;
 import battlecode.common.*;
 import bot1.fast.*;
 
-public class PathFinder {
-    private static RobotController rc;
+public class PathFinder extends RobotPlayer{
     private static MapLocation target = null;
-
-    public static void init(RobotController r) {
-        rc = r;
-    }
 
     static public void move(MapLocation loc) {
         if (!rc.isMovementReady())
