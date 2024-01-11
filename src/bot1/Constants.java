@@ -1,6 +1,7 @@
 package bot1;
 
 import battlecode.common.Direction;
+import battlecode.common.GameConstants;
 
 import java.util.Random;
 
@@ -24,4 +25,7 @@ public class Constants {
 
     public static final int CRUMBS_MIN_FOR_FILLING = 200;
     public static final int CRUMBS_MIN_FOR_CAMPING = 2000;
+
+    public static final int MIN_HEALTH_TO_ADVANCE = 950;
+    public static final int MIN_HEALTH_TO_STAND = 751;
 }

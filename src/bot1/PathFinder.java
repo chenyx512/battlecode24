@@ -6,12 +6,56 @@ import bot1.fast.*;
 public class PathFinder extends RobotPlayer{
     private static MapLocation target = null;
 
+    static void randomMove() throws GameActionException {
+        int starting_i = FastMath.rand256() % Constants.directions.length;
+        for (int i = starting_i; i < starting_i + 8; i++) {
+            Direction dir = Constants.directions[i % 8];
+            if (rc.canMove(dir)) rc.move(dir);
+        }
+    }
+
+    static void tryMoveDir(Direction dir) throws GameActionException {
+        if (rc.isMovementReady() && dir != Direction.CENTER) {
+            if (rc.canMove(dir)) {
+                rc.move(dir);
+            } else if (rc.canMove(dir.rotateRight())) {
+                rc.move(dir.rotateRight());
+            } else if (rc.canMove(dir.rotateLeft())) {
+                rc.move(dir.rotateLeft());
+            } else {
+                randomMove();
+            }
+        }
+    }
+
+    static public void escort(MapLocation loc) throws GameActionException {
+        /* To stay 1 tile away from the escorted duck to prevent congestion */
+        Debug.printString(Debug.PATHFINDING, String.format("escort%s", loc.toString()));
+        if (!rc.isMovementReady())
+            return;
+        // if I am right next to the escorted, move away to make room
+        if (rc.getLocation().isAdjacentTo(loc)) {
+            tryMoveDir(rc.getLocation().directionTo(loc).opposite());
+            return;
+        }
+        // otherwize, try path to a direction behind the escorted, unless I am gonna be adjacent, then I stop
+        MapLocation closestHome = Util.getClosestLoc(loc, Robot.mySpawnCenters);
+        Direction protectDir = loc.directionTo(closestHome).opposite();
+        target = loc.add(protectDir).add(protectDir);
+        Direction dir = BugNav.getMoveDir();
+        if (dir != null && !rc.getLocation().add(dir).isAdjacentTo(loc))
+            rc.move(dir);
+    }
+
     static public void move(MapLocation loc) throws GameActionException {
         if (!rc.isMovementReady())
             return;
-        Debug.printString(Debug.PATHFINDING, String.format("move%d,%d", loc.x, loc.y));
+        Debug.printString(Debug.PATHFINDING, String.format("move%s", loc.toString()));
         target = loc;
-        BugNav.move();
+        Direction dir = BugNav.getMoveDir();
+        if (dir == null)
+            return;
+        rc.move(dir);
     }
 
     static class BugNav {
@@ -28,7 +72,7 @@ public class PathFinder extends RobotPlayer{
         static FastIntSet visited = new FastIntSet();
         static int id = 12620;
 
-        static boolean move() throws GameActionException {
+        static Direction getMoveDir() throws GameActionException {
             try {
                 // different target? ==> previous data does not help!
                 if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
@@ -83,17 +127,16 @@ public class PathFinder extends RobotPlayer{
                             if (rc.canFill(newLoc)) {
                                 rc.fill(newLoc);
                             }
-                            return true; // chenyx: always return since we can fill this on later rounds
+                            return null; // chenyx: always return since we can fill this on later rounds
                         }
                         if (rc.canMove(dir)) {
-                            rc.move(dir);
                             // Debug.println("Moving in dir: " + dir, id);
-                            return true;
+                            return dir;
                         } else if (rc.senseRobotAtLocation(newLoc) != null) {
                             if (rc.hasFlag() || FastMath.rand256() % 4 == 0) {
                                 // flag carriers don't have to yield
                                 // otherwise wait with some prob to avoid dead looping with friendly robot
-                                return true;
+                                return null;
                             }
                         }
                     }
@@ -175,13 +218,14 @@ public class PathFinder extends RobotPlayer{
                         dir = dir.rotateLeft();
                 }
 
-                if (rc.canMove(dir))
-                    rc.move(dir);
+                if (rc.canMove(dir)) {
+                    return dir;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
             // Debug.println("Last exit", id);
-            return true;
+            return null;
         }
 
         // clear some of the previous data

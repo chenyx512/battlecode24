@@ -41,7 +41,8 @@ public class Micro extends Robot {
             tryAttack();
             if (rc.isActionReady()) {
                 int discount = bestTarget.health <= attackHP? 1 : 0;
-                if (nearbyEnemies.length - discount <= nearbyFriends.length) {
+                if (nearbyEnemies.length - discount <= nearbyFriends.length
+                        && rc.getHealth() >= Constants.MIN_HEALTH_TO_ADVANCE) {
                     MapLocation targetLocation = bestTarget.location;
                     tryMove(getBestMoveDirection(loc -> getScoreForSingleEnemy(loc, targetLocation)));
                     tryAttack();
@@ -50,6 +51,7 @@ public class Micro extends Robot {
                 } else if (!allowedToStandStill(closestEnemy.location)) {
                     tryDropTrap();
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
+                    tryHeal();
                     Debug.printString("kiteback");
                 } else { // if I can stand still I can also heal...
                     tryDropTrap();
@@ -276,6 +278,8 @@ public class Micro extends Robot {
     }
 
     private static boolean allowedToStandStill(MapLocation enemyLocation) {
+        if (rc.getHealth() < Constants.MIN_HEALTH_TO_STAND)
+            return false;
         if (enemyLocation.isWithinDistanceSquared(rc.getLocation(), GameConstants.ATTACK_RADIUS_SQUARED)) {
             return false;
         }

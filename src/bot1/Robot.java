@@ -125,9 +125,8 @@ public class Robot extends RobotPlayer {
         if (flagLoc == null)
             return null;
         if (Comms.readFlagCarried() == 1) {
-            MapLocation closestHome = Util.getClosestLoc(flagLoc, mySpawnCenters);
-            Direction protectDir = flagLoc.directionTo(closestHome).opposite();
-            return flagLoc.add(protectDir).add(protectDir);
+            PathFinder.escort(flagLoc);
+            return null;
         } else
             return flagLoc;
     }
