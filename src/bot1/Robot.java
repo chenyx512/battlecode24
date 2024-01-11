@@ -1,6 +1,7 @@
 package bot1;
 
 import battlecode.common.*;
+import bot1.fast.FastMath;
 
 public class Robot extends RobotPlayer {
     private static MapLocation targetLoc = null;
@@ -30,8 +31,9 @@ public class Robot extends RobotPlayer {
 
         if (!rc.isSpawned()) {
             isCamping = false;
-
-            for (MapLocation loc : rc.getAllySpawnLocations()) {
+            MapLocation[] spawns = rc.getAllySpawnLocations();
+            for (int i = 32; --i >= 0;) {
+                MapLocation loc = spawns[FastMath.rand256() % spawns.length];
                 if (rc.canSpawn(loc)) {
                     rc.spawn(loc);
                     homeSpawn = Util.getClosestLoc(mySpawnCenters);
@@ -67,17 +69,19 @@ public class Robot extends RobotPlayer {
                     Debug.println(Debug.INFO, String.format("base %d camped, moving on", attackID));
                     Comms.writeAttacktargetTarget((attackID + 1) % GameConstants.NUMBER_FLAGS);
                 }
-                // move around to let others in if possible
-                // build traps around enemy spawn
-                for (Direction dir : Constants.directions) {
-                    MapLocation newLoc = rc.getLocation().add(dir);
-                    if (rc.senseMapInfo(newLoc).getSpawnZoneTeam() == oppTeamID && rc.canMove(dir)) {
-                        rc.move(dir);
+                    for (Direction dir : Constants.directions) {
+                        // move around to let others in if possible
+                        MapLocation newLoc = rc.getLocation().add(dir);
+                        if (rc.senseMapInfo(newLoc).getSpawnZoneTeam() == oppTeamID && rc.canMove(dir)) {
+                            rc.move(dir);
+                        }
+                        // build traps around enemy spawn with enough resource and some rng (to distribute around camps)
+                        if (rc.canBuild(TrapType.EXPLOSIVE, newLoc)) {
+                            if (rc.getCrumbs() > Constants.CRUMBS_MIN_FOR_CAMPING && FastMath.rand256() % 32 == 0) {
+                                rc.build(TrapType.EXPLOSIVE, newLoc);
+                            }
+                        }
                     }
-                    if (rc.canBuild(TrapType.EXPLOSIVE, newLoc)) {
-                        rc.build(TrapType.EXPLOSIVE, newLoc);
-                    }
-                }
                 return;
             } else if (rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 9) {
                 // the HQ I was camping is already camped, move to a new HQ to camp

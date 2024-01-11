@@ -48,6 +48,7 @@ public class Micro extends Robot {
                     tryHeal();
                     Debug.printString(String.format("atk%s", targetLocation.toString()));
                 } else if (!allowedToStandStill(closestEnemy.location)) {
+                    tryDropTrap();
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
                     Debug.printString("kiteback");
                 } else { // if I can stand still I can also heal...
@@ -68,6 +69,23 @@ public class Micro extends Robot {
     private static void tryAttack() throws GameActionException {
         if (rc.canAttack(bestTarget.location)) {
             rc.attack(bestTarget.location);
+        }
+    }
+
+    private static void tryDropTrap() throws GameActionException {
+        if (rc.getCrumbs() < TrapType.EXPLOSIVE.buildCost || !rc.isActionReady())
+            return;
+        Direction dir = rc.getLocation().directionTo(closestEnemy.location);
+        MapLocation loc = rc.getLocation().add(dir);
+        // disallowing building traps too close to save some trap
+        for (MapInfo info : rc.senseNearbyMapInfos(loc, 4)) {
+            if (info.getTrapType() != TrapType.NONE)
+                return;
+        }
+        if (rc.canBuild(TrapType.EXPLOSIVE, loc)) {
+            rc.build(TrapType.EXPLOSIVE, loc);
+        } else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation())) {
+            rc.build(TrapType.EXPLOSIVE, rc.getLocation());
         }
     }
 
