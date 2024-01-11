@@ -46,15 +46,20 @@ public class Micro extends Robot {
                     tryMove(getBestMoveDirection(loc -> getScoreForSingleEnemy(loc, targetLocation)));
                     tryAttack();
                     tryHeal();
+                    Debug.printString(String.format("atk%s", targetLocation.toString()));
                 } else if (!allowedToStandStill(closestEnemy.location)) {
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
+                    Debug.printString("kiteback");
                 } else { // if I can stand still I can also heal...
                     tryHeal();
+                    Debug.printString("standheal");
                 }
             } else {
                 if (!allowedToStandStill(closestEnemy.location)) {
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
+                    Debug.printString("kiteback");
                 }
+                Debug.printString("stand");
             }
             return true;
         }
@@ -170,7 +175,7 @@ public class Micro extends Robot {
             }
         }
         for (int i = nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(rc.getLocation()));
+            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(loc));
         }
         // prefer squares where you can be attacked by the fewest enemy
         score -= enemyInAttackRange * 1e6;
@@ -184,7 +189,7 @@ public class Micro extends Robot {
 
     private static double getScoreForSingleEnemy(MapLocation loc, MapLocation enemyLoc) {
         double score = 0;
-        double dis = loc.distanceSquaredTo(enemyLoc);
+        int dis = loc.distanceSquaredTo(enemyLoc);
         if (dis > GameConstants.ATTACK_RADIUS_SQUARED) {
             // prefer tiles closer to the target, up to attack range
             score -= 1e6 * dis;
@@ -199,10 +204,10 @@ public class Micro extends Robot {
             }
         }
         for (int i = nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(rc.getLocation()));
+            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(loc));
         }
         // prefer squares where you can be attacked by the fewest enemy
-        score -= enemyInAttackRange * 1e5;
+        score -= enemyInAttackRange * 1e4;
         // prefer squares where you are closer to an ally
         if (nearbyFriends.length > 0)
             score -= closestFriendDis * 1e2;
@@ -211,7 +216,7 @@ public class Micro extends Robot {
 
     private static Direction getBestMoveDirection(ToDoubleFunction<MapLocation> eval) {
         Direction bestDirection = Direction.CENTER;
-        double bestScore = Double.MIN_VALUE;
+        double bestScore = -Double.MAX_VALUE;
         for (int i = Direction.allDirections().length; --i >= 0; ) {
             Direction direction = Direction.allDirections()[i];
             if (direction != Direction.CENTER && !rc.canMove(direction)) {

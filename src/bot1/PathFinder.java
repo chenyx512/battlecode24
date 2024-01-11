@@ -6,7 +6,7 @@ import bot1.fast.*;
 public class PathFinder extends RobotPlayer{
     private static MapLocation target = null;
 
-    static public void move(MapLocation loc) {
+    static public void move(MapLocation loc) throws GameActionException {
         if (!rc.isMovementReady())
             return;
         Debug.printString(Debug.PATHFINDING, String.format("move%d,%d", loc.x, loc.y));
@@ -28,7 +28,7 @@ public class PathFinder extends RobotPlayer{
         static FastIntSet visited = new FastIntSet();
         static int id = 12620;
 
-        static boolean move() {
+        static boolean move() throws GameActionException {
             try {
                 // different target? ==> previous data does not help!
                 if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
@@ -79,10 +79,20 @@ public class PathFinder extends RobotPlayer{
                     MapLocation newLoc = myLoc.add(dir);
                     if (rc.canSenseLocation(newLoc)) {
                         MapInfo info = rc.senseMapInfo(newLoc);
+                        if (info.isWater() && rc.getCrumbs() >= Constants.CRUMBS_MIN_FOR_FILLING) {
+                            if (rc.canFill(newLoc)) {
+                                rc.fill(newLoc);
+                            }
+                            return true; // chenyx: always return since we can fill this on later rounds
+                        }
                         if (rc.canMove(dir)) {
                             rc.move(dir);
                             // Debug.println("Moving in dir: " + dir, id);
                             return true;
+                        } else if (rc.senseRobotAtLocation(newLoc) != null) {
+                            if (FastMath.rand256() % 4 == 0) {
+                                return true; // chenyx: wait with some prob to avoid looping with friendly robot
+                            }
                         }
                     }
 
