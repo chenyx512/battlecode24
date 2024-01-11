@@ -26,10 +26,13 @@ SCHEMA = {
             'sym': 3,
         }
     },
-    'attackTarget': {
+    'flag': {
         'slots': 1,
         'bits': {
-            'target': 2,
+            'loc': 12,
+            'updateRoundNo': 12,
+            'confirmed': 1,
+            'carried': 1,
         }
     }
 }

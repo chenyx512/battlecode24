@@ -10,7 +10,7 @@ public class Comms extends RobotPlayer {
 
     public final static int HQ_SLOTS = 3;
     public final static int SYMMETRY_SLOTS = 1;
-    public final static int ATTACKTARGET_SLOTS = 1;
+    public final static int FLAG_SLOTS = 1;
 
     public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
@@ -231,22 +231,53 @@ public class Comms extends RobotPlayer {
         dirty2 = 1;
     }
 
-    public static int readAttacktargetTarget() throws GameActionException {
-        return (buf2 & 384) >>> 7;
+    public static int readFlagLoc() throws GameActionException {
+        return ((buf2 & 511) << 3) + ((buf3 & 57344) >>> 13);
     }
 
-    public static void writeAttacktargetTarget(int value) throws GameActionException {assert value >= 0; assert value < 4;
-        buf2 = (buf2 & 65151) | (value << 7);
+    public static void writeFlagLoc(int value) throws GameActionException {assert value >= 0; assert value < 4096;
+        buf2 = (buf2 & 65024) | ((value & 4088) >>> 3);
         dirty2 = 1;
+        buf3 = (buf3 & 8191) | ((value & 7) << 13);
+        dirty3 = 1;
     }
 
-    public static int readAttacktargetAll() throws GameActionException {
-        return (buf2 & 384) >>> 7;
+    public static int readFlagUpdateroundno() throws GameActionException {
+        return (buf3 & 8190) >>> 1;
     }
 
-    public static void writeAttacktargetAll(int value) throws GameActionException {assert value >= 0; assert value < 4;
-        buf2 = (buf2 & 65151) | (value << 7);
+    public static void writeFlagUpdateroundno(int value) throws GameActionException {assert value >= 0; assert value < 4096;
+        buf3 = (buf3 & 57345) | (value << 1);
+        dirty3 = 1;
+    }
+
+    public static int readFlagConfirmed() throws GameActionException {
+        return (buf3 & 1);
+    }
+
+    public static void writeFlagConfirmed(int value) throws GameActionException {assert value >= 0; assert value < 2;
+        buf3 = (buf3 & 65534) | (value);
+        dirty3 = 1;
+    }
+
+    public static int readFlagCarried() throws GameActionException {
+        return (buf4 & 32768) >>> 15;
+    }
+
+    public static void writeFlagCarried(int value) throws GameActionException {assert value >= 0; assert value < 2;
+        buf4 = (buf4 & 32767) | (value << 15);
+        dirty4 = 1;
+    }
+
+    public static int readFlagAll() throws GameActionException {
+        return ((buf2 & 511) << 17) + ((buf4 & 131071) >>> -1);
+    }
+
+    public static void writeFlagAll(int value) throws GameActionException {assert value >= 0; assert value < 67108864;
+        buf2 = (buf2 & 65024) | ((value & 66977792) >>> 17);
         dirty2 = 1;
+        buf4 = (buf4 & 0) | ((value & 131071) << -1);
+        dirty4 = 1;
     }
 
     // BUFFER POOL READ AND WRITE METHODS

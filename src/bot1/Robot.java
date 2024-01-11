@@ -3,6 +3,8 @@ package bot1;
 import battlecode.common.*;
 import bot1.fast.FastMath;
 
+import java.util.concurrent.Callable;
+
 public class Robot extends RobotPlayer {
     private static MapLocation targetLoc = null;
     private static int targetRound = -1;
@@ -10,8 +12,6 @@ public class Robot extends RobotPlayer {
     public static MapLocation[] mySpawnCenters = new MapLocation[3];
     public static MapLocation[] oppSpawnCenters = new MapLocation[3];
 
-    public static int attackID;
-    public static boolean isCamping;
     public static MapLocation homeSpawn;
 
     public static int baseHeal = SkillType.HEAL.skillEffect;
@@ -30,7 +30,6 @@ public class Robot extends RobotPlayer {
         healHP = Math.round(baseHeal * ((float) SkillType.HEAL.getSkillEffect(rc.getLevel(SkillType.HEAL)) / 100 + 1));
 
         if (!rc.isSpawned()) {
-            isCamping = false;
             MapLocation[] spawns = rc.getAllySpawnLocations();
             for (int i = 32; --i >= 0;) {
                 MapLocation loc = spawns[FastMath.rand256() % spawns.length];
@@ -51,46 +50,22 @@ public class Robot extends RobotPlayer {
         if (!rc.isSpawned())
             return;
 
-        if (Micro.act())
+        if (rc.hasFlag()) {
+            Comms.writeFlagLoc(Util.loc2int(rc.getLocation()));
+            Comms.writeFlagUpdateroundno(rc.getRoundNum());
+            Comms.writeFlagConfirmed(1);
+            Comms.writeFlagCarried(1);
+        } else if (Micro.act()) {
             return;
+        }
 
         MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
         if (crumbs.length > 0) {
             targetLoc = Util.getClosestLoc(crumbs);
         } else if (rc.getRoundNum() <= 180) {
             targetLoc = Explorer.getUnseenExploreTarget();
-        } else {
-            Debug.printString(Debug.INFO, String.format("attk%d", attackID));
-            if (rc.senseMapInfo(rc.getLocation()).getSpawnZoneTeam() == oppTeamID) {
-                // I am camping spawn, if it is full ask other to attack elsewhere
-                isCamping = true;
-                if (attackID == Comms.readAttacktargetTarget()
-                        && rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 8) {
-                    Debug.println(Debug.INFO, String.format("base %d camped, moving on", attackID));
-                    Comms.writeAttacktargetTarget((attackID + 1) % GameConstants.NUMBER_FLAGS);
-                }
-                    for (Direction dir : Constants.directions) {
-                        // move around to let others in if possible
-                        MapLocation newLoc = rc.getLocation().add(dir);
-                        if (rc.senseMapInfo(newLoc).getSpawnZoneTeam() == oppTeamID && rc.canMove(dir)) {
-                            rc.move(dir);
-                        }
-                        // build traps around enemy spawn with enough resource and some rng (to distribute around camps)
-                        if (rc.canBuild(TrapType.EXPLOSIVE, newLoc)) {
-                            if (rc.getCrumbs() > Constants.CRUMBS_MIN_FOR_CAMPING && FastMath.rand256() % 32 == 0) {
-                                rc.build(TrapType.EXPLOSIVE, newLoc);
-                            }
-                        }
-                    }
-                return;
-            } else if (rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 9) {
-                // the HQ I was camping is already camped, move to a new HQ to camp
-                isCamping = false;
-            }
-            if (!isCamping) {
-                attackID = Comms.readAttacktargetTarget();
-            }
-            targetLoc = oppSpawnCenters[attackID];
+        } else if (!rc.hasFlag()) {
+            targetLoc = getFlagTarget();
         }
 
         if (targetLoc != null) {
@@ -103,6 +78,58 @@ public class Robot extends RobotPlayer {
         if (rc.isSpawned()) {
             MapRecorder.recordSym(2000);
         }
+    }
+
+    static MapLocation getFlagTarget() throws GameActionException {
+        MapLocation flagLoc = Util.int2loc(Comms.readFlagLoc());
+        // invalidate false confirmed flag
+        if (Comms.readFlagConfirmed() == 1
+                && rc.getLocation().isWithinDistanceSquared(flagLoc, 8)
+                && rc.senseNearbyFlags(-1, oppTeam).length == 0) {
+            Comms.writeFlagLoc(0);
+            Comms.writeFlagConfirmed(0);
+            Comms.writeFlagCarried(0);
+            flagLoc = null;
+        }
+        if (flagLoc == null || rc.getRoundNum() - Comms.readFlagUpdateroundno() > 100) {
+            // update new flag
+            MapLocation[] broadcasts = rc.senseBroadcastFlagLocations();
+            if (broadcasts.length > 0) {
+                MapLocation loc = broadcasts[FastMath.rand256() % broadcasts.length];
+                Comms.writeFlagLoc(Util.loc2int(loc));
+                Comms.writeFlagConfirmed(0);
+                Comms.writeFlagUpdateroundno(rc.getRoundNum());
+                Comms.writeFlagCarried(0);
+                Debug.println(Debug.INFO, String.format("setting flag loc to %s", loc.toString()));
+                return loc;
+            } else {
+                // maybe the first 200 turns no broadcast
+                return null;
+            }
+        }
+        // confirm a flag if none has been confirmed yet
+        if (Comms.readFlagConfirmed() == 0) {
+            FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1, oppTeam);
+            if (nearbyFlags.length > 0) {
+                flagLoc = nearbyFlags[FastMath.rand256() % nearbyFlags.length].getLocation();
+                Comms.writeFlagLoc(Util.loc2int(flagLoc));
+                Comms.writeFlagConfirmed(1);
+                Comms.writeFlagUpdateroundno(rc.getRoundNum());
+                Comms.writeFlagCarried(0);
+            }
+        }
+        if (rc.canPickupFlag(flagLoc)) {
+            rc.pickupFlag(flagLoc);
+            return Util.getClosestLoc(mySpawnCenters);
+        }
+        if (flagLoc == null)
+            return null;
+        if (Comms.readFlagCarried() == 1) {
+            MapLocation closestHome = Util.getClosestLoc(flagLoc, mySpawnCenters);
+            Direction protectDir = flagLoc.directionTo(closestHome).opposite();
+            return flagLoc.add(protectDir).add(protectDir);
+        } else
+            return flagLoc;
     }
 
     static void initHQLocs() throws GameActionException {
@@ -163,3 +190,35 @@ public class Robot extends RobotPlayer {
         rc.move(dir);
     }
 }
+// code remnants for spawn camping, not working because defense is too strong
+//            Debug.printString(Debug.INFO, String.format("attk%d", attackID));
+//            if (rc.senseMapInfo(rc.getLocation()).getSpawnZoneTeam() == oppTeamID) {
+//                // I am camping spawn, if it is full ask other to attack elsewhere
+//                isCamping = true;
+//                if (attackID == Comms.readAttacktargetTarget()
+//                        && rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 8) {
+//                    Debug.println(Debug.INFO, String.format("base %d camped, moving on", attackID));
+//                    Comms.writeAttacktargetTarget((attackID + 1) % GameConstants.NUMBER_FLAGS);
+//                }
+//                    for (Direction dir : Constants.directions) {
+//                        // move around to let others in if possible
+//                        MapLocation newLoc = rc.getLocation().add(dir);
+//                        if (rc.senseMapInfo(newLoc).getSpawnZoneTeam() == oppTeamID && rc.canMove(dir)) {
+//                            rc.move(dir);
+//                        }
+//                        // build traps around enemy spawn with enough resource and some rng (to distribute around camps)
+//                        if (rc.canBuild(TrapType.EXPLOSIVE, newLoc)) {
+//                            if (rc.getCrumbs() > Constants.CRUMBS_MIN_FOR_CAMPING && FastMath.rand256() % 32 == 0) {
+//                                rc.build(TrapType.EXPLOSIVE, newLoc);
+//                            }
+//                        }
+//                    }
+//                return;
+//            } else if (rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 9) {
+//                // the HQ I was camping is already camped, move to a new HQ to camp
+//                isCamping = false;
+//            }
+//            if (!isCamping) {
+//                attackID = Comms.readAttacktargetTarget();
+//            }
+//            targetLoc = oppSpawnCenters[attackID];

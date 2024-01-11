@@ -90,8 +90,10 @@ public class PathFinder extends RobotPlayer{
                             // Debug.println("Moving in dir: " + dir, id);
                             return true;
                         } else if (rc.senseRobotAtLocation(newLoc) != null) {
-                            if (FastMath.rand256() % 4 == 0) {
-                                return true; // chenyx: wait with some prob to avoid looping with friendly robot
+                            if (rc.hasFlag() || FastMath.rand256() % 4 == 0) {
+                                // flag carriers don't have to yield
+                                // otherwise wait with some prob to avoid dead looping with friendly robot
+                                return true;
                             }
                         }
                     }

@@ -52,6 +52,7 @@ public class Micro extends Robot {
                     tryMove(getBestMoveDirection(Micro::getScoreForKiting));
                     Debug.printString("kiteback");
                 } else { // if I can stand still I can also heal...
+                    tryDropTrap();
                     tryHeal();
                     Debug.printString("standheal");
                 }
