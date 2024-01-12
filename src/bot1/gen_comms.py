@@ -38,7 +38,7 @@ SCHEMA = {
             'exists': 1,
             'loc': 12,
             'original_loc': 12,
-            'confirmed': 1,
+            'confirmed': 1, # whether the flag's broadcast location is correctly set
             'carried': 1,
             'assigned': 6,
         }

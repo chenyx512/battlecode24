@@ -7,6 +7,7 @@ import battlecode.common.MapLocation;
 public class FlagManager extends RobotPlayer {
     private static int carriedEnemyFlagIndex = -1;
     private static MapLocation flagCarryDestination = null;
+    private static boolean broadcastInit = false;
 
     public static void init() throws GameActionException {
         for (int i = 3; --i >= 0;) {
@@ -14,6 +15,7 @@ public class FlagManager extends RobotPlayer {
             Comms.writeMyflagsOriginalLoc(i, Util.loc2int(Robot.mySpawnCenters[i]));
             Comms.writeMyflagsExists(i, 1);
 
+            // opp flag will be be resetted again at round 200 during init turn
             Comms.writeOppflagsLoc(i, Util.loc2int(MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[i])));
             Comms.writeOppflagsExists(i, 1);
         }
@@ -27,8 +29,29 @@ public class FlagManager extends RobotPlayer {
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Comms.readOppflagsOriginalLoc(carriedEnemyFlagIndex));
             carriedEnemyFlagIndex = -1;
         }
+        if (rc.getRoundNum() > 200) {
+            if (!broadcastInit) {
+                if (Comms.readOppflagsConfirmed(0) == 1
+                        && Comms.readOppflagsConfirmed(1) == 1
+                        && Comms.readOppflagsConfirmed(2) == 1) {
+                    broadcastInit = true;
+                } else {
+                    MapLocation[] locs = rc.senseBroadcastFlagLocations();
+                    // we hope there is one robot that doesn't see anyflag will be able to init this...
+                    if (locs.length == 3) {
+                        for (int i = 3; --i >= 0;) {
+                            Comms.writeOppflagsLoc(i, Util.loc2int(locs[i]));
+                            Comms.writeOppflagsOriginalLoc(i, 0);
+                            Comms.writeOppflagsId(i, 0);
+                            Comms.writeOppflagsCarried(i, 0);
+                            Comms.writeOppflagsConfirmed(i, 1);
+                        }
+                        broadcastInit = true;
+                    }
+                }
+            }
+        }
     }
-
 
     public static boolean act() throws GameActionException {
         boolean[] enemyFlagSeen = new boolean[3];
@@ -48,7 +71,6 @@ public class FlagManager extends RobotPlayer {
                     if (Comms.readOppflagsOriginalLoc(flagIndex) == 0) {
                         Comms.writeOppflagsOriginalLoc(flagIndex, Util.loc2int(flag.getLocation()));
                     }
-                    Comms.writeOppflagsConfirmed(flagIndex, 1);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
                     if (rc.canPickupFlag(flag.getLocation())) {
                         flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
@@ -119,7 +141,7 @@ public class FlagManager extends RobotPlayer {
         int bestDis = Integer.MAX_VALUE;
         for (int i = 3; --i >= 0;) {
             if (Comms.readOppflagsExists(i) == 1
-                    && Comms.readOppflagsConfirmed(i) == 0) {
+                    && Comms.readOppflagsOriginalLoc(i) == 0) {
                 int dis = Util.int2loc(Comms.readOppflagsLoc(i)).distanceSquaredTo(flag.getLocation());
                 if (dis < bestDis) {
                     bestDis = dis;
