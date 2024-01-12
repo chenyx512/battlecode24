@@ -6,6 +6,8 @@ import battlecode.common.GameConstants;
 import java.util.Random;
 
 public class Constants {
+    public static boolean DEBUG_FAIL_FAST = true;
+
     /** Array containing all the possible movement directions. */
     public static final Direction[] directions = {
             Direction.NORTH,

@@ -37,12 +37,17 @@ public strictfp class RobotPlayer {
                 int roundEnd = rc.getRoundNum();
                 if (round < roundEnd){
                     System.out.println("overrun " + round + " " + rc.getLocation().toString() + Debug.bytecodeDebug);
+                    if (Constants.DEBUG_FAIL_FAST) {
+                        rc.resign();
+                    }
                 }
-
                 Debug.flush();
             }  catch (Exception e) {
                 System.out.println("Exception");
                 e.printStackTrace();
+                if (Constants.DEBUG_FAIL_FAST) {
+                    rc.resign();
+                }
             } finally {
                 Clock.yield();
             }

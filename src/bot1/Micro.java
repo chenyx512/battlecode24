@@ -5,7 +5,7 @@ import bot1.fast.*;
 import java.util.function.ToDoubleFunction;
 
 public class Micro extends Robot {
-    private static RobotInfo[] nearbyEnemies, nearbyFriends;
+    public static RobotInfo[] nearbyEnemies, nearbyFriends; // TODO move to cache
     private static RobotInfo bestTarget, closestEnemy;
 
     static boolean act() throws GameActionException {

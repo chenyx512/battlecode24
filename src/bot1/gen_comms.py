@@ -8,12 +8,6 @@ from pathlib import Path
 import sys
 
 SCHEMA = {
-    # 'ducks': {
-    #     'slots': 50,
-    #     'bits': {
-    #         'alive': 1,
-    #     }
-    # },
     'HQ': {
         'slots': 3,
         'bits': {
@@ -26,13 +20,27 @@ SCHEMA = {
             'sym': 3,
         }
     },
-    'flag': {
-        'slots': 1,
+    'myflags': {
+        'slots': 3,
         'bits': {
+            'id': 12,
+            'exists': 1,
             'loc': 12,
-            'updateRoundNo': 12,
+            'original_loc': 12,
+            'assigned': 6,
+            'distress': 1,
+        }
+    },
+    'oppflags': {
+        'slots': 3,
+        'bits': {
+            'id': 12,
+            'exists': 1,
+            'loc': 12,
+            'original_loc': 12,
             'confirmed': 1,
             'carried': 1,
+            'assigned': 6,
         }
     }
 }
@@ -51,8 +59,8 @@ def gen():
         datatype_bits = sum(SCHEMA[datatype]['bits'].values())
         prefix_bits = 0
 
-        for attribute in [*SCHEMA[datatype]['bits'], 'all']:
-            if attribute == 'all':
+        for attribute in SCHEMA[datatype]['bits']:
+            if attribute == 'all': # unused since it may be too big
                 attribute_bits = datatype_bits
                 prefix_bits = 0
             else:
@@ -91,7 +99,7 @@ def gen():
             case {idx}: return {ret};"""
                 out += f"""
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm read param not in range");
+                Debug.failFast("Comm read param not in range"); return -1;
         }}
     }}
 """
@@ -123,8 +131,7 @@ def gen():
             if SCHEMA[datatype]['slots'] == 1:
                 out += f"""
     public static void write{capitalize(datatype)}{capitalize(attribute)}(int value) throws GameActionException {{"""
-                if DEBUG:
-                    out += f"""assert value >= 0; assert value < {1 << attribute_bits};"""
+                out += f"""Debug.betterAssert(value >= 0 && value < {1 << attribute_bits}, "write value out of range");"""
                 for w in writes[0]:
                     out += f"""
         {w};"""
@@ -134,8 +141,7 @@ def gen():
             else:
                 out += f"""
     public static void write{capitalize(datatype)}{capitalize(attribute)}(int idx, int value) throws GameActionException {{"""
-                if DEBUG:
-                    out += f"""assert value >= 0; assert value < {1 << attribute_bits};"""
+                out += f"""Debug.betterAssert(value >= 0 && value < {1 << attribute_bits}, "write value out of range");"""
                 out += """
         switch (idx) {"""
                 for idx, write in enumerate(writes):
@@ -148,7 +154,7 @@ def gen():
                 break;"""
                 out += f"""
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm write param not in range");
+                Debug.failFast("Comm write param not in range"); 
         }}
     }}
 """
@@ -176,13 +182,6 @@ if __name__ == '__main__':
     package_name = 'bot1'
     template_file = Path('./CommsTemplate.java')
     out_file = Path('./Comms.java')
-
-    if len(sys.argv) > 1 and sys.argv[1]:
-        print("Generating Deploy mode")
-        DEBUG = False
-    else:
-        print("Generating DEBUG mode")
-        DEBUG = True
 
     with open(template_file, 'r') as t:
         with open(out_file, 'w') as f:

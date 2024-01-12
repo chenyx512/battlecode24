@@ -33,6 +33,24 @@ public class Debug extends RobotPlayer {
         Debug.printString(Debug.INFO, s);
     }
 
+    public static void failFast(GameActionException ex) {
+        if (Constants.DEBUG_FAIL_FAST) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    public static void failFast(String message) {
+        if (Constants.DEBUG_FAIL_FAST) {
+            throw new IllegalStateException(message);
+        }
+    }
+
+    public static void betterAssert(boolean cond, String msg) {
+        if (!cond) {
+            failFast(msg);
+        }
+    }
+
     public static void println(boolean cond, String s) {
         if (VERBOSE && cond) {
             System.out.println(s);

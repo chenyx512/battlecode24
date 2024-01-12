@@ -1,9 +1,6 @@
 package bot1;
 
 import battlecode.common.*;
-import bot1.fast.FastMath;
-
-import java.util.concurrent.Callable;
 
 public class Robot extends RobotPlayer {
     private static MapLocation targetLoc = null;
@@ -16,56 +13,63 @@ public class Robot extends RobotPlayer {
 
     public static int baseHeal = SkillType.HEAL.skillEffect;
     public static int attackHP, healHP;
+    public static boolean isMaster = false;
 
     static void init() throws GameActionException {
-        initHQLocs();
+        initHQLocs(); // also the flag manager
     }
 
     static void initTurn() throws GameActionException {
         Comms.pull();
         MapRecorder.updateSym();
+        RoleAssigner.initTurn(); // takes care of spawning
+        FlagManager.initTurn();
+        Cache.initTurn();
 
         // updates self stats
         attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
         healHP = Math.round(baseHeal * ((float) SkillType.HEAL.getSkillEffect(rc.getLevel(SkillType.HEAL)) / 100 + 1));
 
-        if (!rc.isSpawned()) {
-            MapLocation[] spawns = rc.getAllySpawnLocations();
-            for (int i = 32; --i >= 0;) {
-                MapLocation loc = spawns[FastMath.rand256() % spawns.length];
-                if (rc.canSpawn(loc)) {
-                    rc.spawn(loc);
-                    homeSpawn = Util.getClosestLoc(mySpawnCenters);
-                    break;
-                }
+        if (rc.isSpawned()) {
+            if (rc.canBuyGlobal(GlobalUpgrade.ACTION)) {
+                rc.buyGlobal(GlobalUpgrade.ACTION);
+            } else if (rc.canBuyGlobal(GlobalUpgrade.HEALING)) {
+                rc.buyGlobal(GlobalUpgrade.HEALING);
             }
-        } else if (rc.canBuyGlobal(GlobalUpgrade.ACTION)) {
-            rc.buyGlobal(GlobalUpgrade.ACTION);
-        } else if (rc.canBuyGlobal(GlobalUpgrade.HEALING)) {
-            rc.buyGlobal(GlobalUpgrade.HEALING);
         }
     }
 
     static void play() throws GameActionException {
-        if (!rc.isSpawned())
-            return;
-
-        if (rc.hasFlag()) {
-            Comms.writeFlagLoc(Util.loc2int(rc.getLocation()));
-            Comms.writeFlagUpdateroundno(rc.getRoundNum());
-            Comms.writeFlagConfirmed(1);
-            Comms.writeFlagCarried(1);
-        } else if (Micro.act()) {
+        if (isMaster && rc.getRoundNum() % 5 == 0) {
+//            for (int i = 0; i < 3; i++) {
+//                System.out.printf("id%d exist%d confirm%d loc%d oriloc%d%n",
+//                        Comms.readOppflagsId(i), Comms.readOppflagsExists(i), Comms.readOppflagsConfirmed(i),
+//                        Comms.readOppflagsLoc(i), Comms.readOppflagsOriginalLoc(i));
+//            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readMyflagsAssigned(i)));
+            sb.append(" /ATTK ");
+            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readOppflagsAssigned(i)));
+            System.out.println(sb.toString());
+        }
+        if (!rc.isSpawned()) {
             return;
         }
+
+        if (FlagManager.act())
+            return;
+
+        if (Micro.act())
+            return;
 
         MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
         if (crumbs.length > 0) {
             targetLoc = Util.getClosestLoc(crumbs);
         } else if (rc.getRoundNum() <= 180) {
             targetLoc = Explorer.getUnseenExploreTarget();
-        } else if (!rc.hasFlag()) {
-            targetLoc = getFlagTarget();
+        } else {
+            RoleAssigner.act();
+            return;
         }
 
         if (targetLoc != null) {
@@ -81,54 +85,8 @@ public class Robot extends RobotPlayer {
     }
 
     static MapLocation getFlagTarget() throws GameActionException {
-        MapLocation flagLoc = Util.int2loc(Comms.readFlagLoc());
-        // invalidate false confirmed flag
-        if (Comms.readFlagConfirmed() == 1
-                && rc.getLocation().isWithinDistanceSquared(flagLoc, 8)
-                && rc.senseNearbyFlags(-1, oppTeam).length == 0) {
-            Comms.writeFlagLoc(0);
-            Comms.writeFlagConfirmed(0);
-            Comms.writeFlagCarried(0);
-            flagLoc = null;
-        }
-        if (flagLoc == null || rc.getRoundNum() - Comms.readFlagUpdateroundno() > 100) {
-            // update new flag
-            MapLocation[] broadcasts = rc.senseBroadcastFlagLocations();
-            if (broadcasts.length > 0) {
-                MapLocation loc = broadcasts[FastMath.rand256() % broadcasts.length];
-                Comms.writeFlagLoc(Util.loc2int(loc));
-                Comms.writeFlagConfirmed(0);
-                Comms.writeFlagUpdateroundno(rc.getRoundNum());
-                Comms.writeFlagCarried(0);
-                Debug.println(Debug.INFO, String.format("setting flag loc to %s", loc.toString()));
-                return loc;
-            } else {
-                // maybe the first 200 turns no broadcast
-                return null;
-            }
-        }
-        // confirm a flag if none has been confirmed yet
-        if (Comms.readFlagConfirmed() == 0) {
-            FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1, oppTeam);
-            if (nearbyFlags.length > 0) {
-                flagLoc = nearbyFlags[FastMath.rand256() % nearbyFlags.length].getLocation();
-                Comms.writeFlagLoc(Util.loc2int(flagLoc));
-                Comms.writeFlagConfirmed(1);
-                Comms.writeFlagUpdateroundno(rc.getRoundNum());
-                Comms.writeFlagCarried(0);
-            }
-        }
-        if (rc.canPickupFlag(flagLoc)) {
-            rc.pickupFlag(flagLoc);
-            return Util.getClosestLoc(mySpawnCenters);
-        }
-        if (flagLoc == null)
-            return null;
-        if (Comms.readFlagCarried() == 1) {
-            PathFinder.escort(flagLoc);
-            return null;
-        } else
-            return flagLoc;
+        MapLocation flagLoc = Util.int2loc(Comms.readOppflagsLoc(0));
+        return flagLoc;
     }
 
     static void initHQLocs() throws GameActionException {
@@ -164,7 +122,9 @@ public class Robot extends RobotPlayer {
                 mySpawnCenters[i] = new MapLocation(sumX / 9, sumY / 9);
                 Comms.writeHqLoc(i, Util.loc2int(mySpawnCenters[i]));
                 Debug.println(Debug.INFO, String.format("HQ %d: %d %d", i, sumX / 9, sumY / 9));
+                isMaster = true;
             }
+            FlagManager.init();
             Comms.push();
         } else {
             for (int i = 3; --i >= 0; ) {
