@@ -41,8 +41,9 @@ public class Micro extends Robot {
             tryAttack();
             if (rc.isActionReady()) {
                 int discount = bestTarget.health <= attackHP? 1 : 0;
-                if (nearbyEnemies.length - discount <= nearbyFriends.length
-                        && rc.getHealth() >= Constants.MIN_HEALTH_TO_ADVANCE) {
+                if ((nearbyEnemies.length - discount <= nearbyFriends.length
+                        && rc.getHealth() >= Constants.MIN_HEALTH_TO_ADVANCE)
+                        || bestTarget.hasFlag()) {
                     MapLocation targetLocation = bestTarget.location;
                     tryMove(getBestMoveDirection(loc -> getScoreForSingleEnemy(loc, targetLocation)));
                     tryAttack();
@@ -166,7 +167,7 @@ public class Micro extends Robot {
     }
 
     static double getAttackTargetScore(RobotInfo r) {
-        double score = getRobotScore(r) * r.getHealth();
+        double score = 0;
         if (r.health <= attackHP) // prioritize anything we can kill
             score += 1e9;
         Direction dir = canReachInOneStep(r.location);
@@ -174,8 +175,13 @@ public class Micro extends Robot {
         if (dir == Direction.CENTER) {
             score += 1e8; // prioritize anything we can shoot rn so we can kite back
         } else if (dir != null)  {
-            score += 1e7; // prioritize anything we can shoot within one move
+            if (r.hasFlag()) {
+                score += 1e8;
+            } else {
+                score += 1e7; // prioritize anything we can shoot within one move
+            }
         }
+        if (r.hasFlag()) score += 1e6;
         int timeToKill = r.getHealth() / attackHP;
         score += getRobotScore(r) / timeToKill;
         return score;
