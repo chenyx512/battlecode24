@@ -1,7 +1,7 @@
-package bot1;
+package macrobot;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import macrobot.fast.*;
 
 public class Util extends RobotPlayer {
     public static String toString(Object o) {

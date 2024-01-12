@@ -1,4 +1,4 @@
-package bot1;
+package macrobot;
 
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;

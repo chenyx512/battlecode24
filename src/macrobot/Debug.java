@@ -1,5 +1,5 @@
 // shamelessly copied from 4 musketeer https://github.com/maxwelljones14/BattleCode2023/blob/main/src/MPWorking/Debug.java
-package bot1;
+package macrobot;
 
 import battlecode.common.*;
 

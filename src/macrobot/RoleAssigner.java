@@ -1,8 +1,8 @@
-package bot1;
+package macrobot;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
-import bot1.fast.FastMath;
+import macrobot.fast.FastMath;
 
 import java.util.Map;
 
