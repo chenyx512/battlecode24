@@ -1,5 +1,6 @@
 package macrobot;
 
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import macrobot.fast.FastMath;

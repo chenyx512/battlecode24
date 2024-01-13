@@ -1,5 +1,6 @@
 package bot1;
 
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import bot1.fast.FastMath;

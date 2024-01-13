@@ -3,9 +3,6 @@ package macrobot;
 import battlecode.common.*;
 
 public class Robot extends RobotPlayer {
-    private static MapLocation targetLoc = null;
-    private static int targetRound = -1;
-
     public static MapLocation[] mySpawnCenters = new MapLocation[3];
     public static MapLocation[] oppSpawnCenters = new MapLocation[3];
 
@@ -61,21 +58,16 @@ public class Robot extends RobotPlayer {
         if (FlagManager.act())
             return;
 
-        if (Micro.act())
-            return;
-
-        MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
-        if (crumbs.length > 0) {
-            targetLoc = Util.getClosestLoc(crumbs);
-        } else if (rc.getRoundNum() <= 180) {
-            targetLoc = Explorer.getUnseenExploreTarget();
-        } else {
+        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
+            if (findCrumb())
+                return;
+            PathFinder.move(Explorer.getUnseenExploreTarget());
+        }  else {
+            if (Micro.act())
+                return;
+            if (findCrumb())
+                return;
             RoleAssigner.act();
-            return;
-        }
-
-        if (targetLoc != null) {
-            PathFinder.move(targetLoc);
         }
     }
 
@@ -86,9 +78,13 @@ public class Robot extends RobotPlayer {
         }
     }
 
-    static MapLocation getFlagTarget() throws GameActionException {
-        MapLocation flagLoc = Util.int2loc(Comms.readOppflagsLoc(0));
-        return flagLoc;
+    static boolean findCrumb() throws GameActionException {
+        MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
+        if (crumbs.length > 0) {
+            PathFinder.move(Util.getClosestLoc(crumbs));
+            return true;
+        }
+        return false;
     }
 
     static void initHQLocs() throws GameActionException {

@@ -177,7 +177,7 @@ public class Comms extends RobotPlayer {
                 dirty2 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -219,7 +219,7 @@ public class Comms extends RobotPlayer {
                 dirty8 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -248,7 +248,7 @@ public class Comms extends RobotPlayer {
                 dirty8 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -279,7 +279,7 @@ public class Comms extends RobotPlayer {
                 dirty9 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -312,7 +312,7 @@ public class Comms extends RobotPlayer {
                 dirty10 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -343,7 +343,7 @@ public class Comms extends RobotPlayer {
                 dirty10 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -372,7 +372,7 @@ public class Comms extends RobotPlayer {
                 dirty10 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -407,7 +407,7 @@ public class Comms extends RobotPlayer {
                 dirty17 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -436,7 +436,7 @@ public class Comms extends RobotPlayer {
                 dirty17 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -469,7 +469,7 @@ public class Comms extends RobotPlayer {
                 dirty17 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -500,7 +500,7 @@ public class Comms extends RobotPlayer {
                 dirty18 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -529,7 +529,7 @@ public class Comms extends RobotPlayer {
                 dirty18 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -558,7 +558,7 @@ public class Comms extends RobotPlayer {
                 dirty18 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
@@ -591,7 +591,7 @@ public class Comms extends RobotPlayer {
                 dirty19 = 1;
                 break;
             default:
-                Debug.failFast("Comm read param not in range"); 
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
