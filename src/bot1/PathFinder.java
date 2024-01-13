@@ -48,7 +48,7 @@ public class PathFinder extends RobotPlayer{
     }
 
     static public void move(MapLocation loc) throws GameActionException {
-        if (!rc.isMovementReady())
+        if (!rc.isMovementReady() || loc == null)
             return;
         Debug.printString(Debug.PATHFINDING, String.format("move%s", loc.toString()));
         target = loc;
