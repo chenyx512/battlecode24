@@ -5,22 +5,17 @@ import bot1.fast.*;
 import java.util.function.ToDoubleFunction;
 
 public class Micro extends Robot {
-    public static RobotInfo[] nearbyEnemies, nearbyFriends; // TODO move to cache
     private static RobotInfo bestTarget, closestEnemy;
 
     static boolean act() throws GameActionException {
         // assumptions
         assert (GameConstants.ATTACK_RADIUS_SQUARED == GameConstants.HEAL_RADIUS_SQUARED) && (GameConstants.ATTACK_RADIUS_SQUARED == 4);
-
-        nearbyEnemies = rc.senseNearbyRobots(-1, oppTeam);
-        nearbyFriends = rc.senseNearbyRobots(-1, myTeam);
-
         bestTarget = null;
         closestEnemy = null;
 
         double bestScore = Double.MIN_VALUE;
         double closestDis = Double.MAX_VALUE;
-        for (RobotInfo r : nearbyEnemies) {
+        for (RobotInfo r : Cache.nearbyEnemies) {
             double score = getAttackTargetScore(r);
             if (score > bestScore) {
                 bestScore = score;
@@ -33,7 +28,7 @@ public class Micro extends Robot {
             }
         }
 
-        if (nearbyEnemies.length == 0) {
+        if (Cache.nearbyEnemies.length == 0) {
             // currently healing isn't too profitable, dying is faster regain of health, do not go out of way to heal
             tryHeal();
             return false;
@@ -41,7 +36,7 @@ public class Micro extends Robot {
             tryAttack();
             if (rc.isActionReady()) {
                 int discount = bestTarget.health <= attackHP? 1 : 0;
-                if ((nearbyEnemies.length - discount <= nearbyFriends.length
+                if ((Cache.nearbyEnemies.length - discount <= Cache.nearbyFriends.length
                         && rc.getHealth() >= Constants.MIN_HEALTH_TO_ADVANCE)
                         || bestTarget.hasFlag()) {
                     MapLocation targetLocation = bestTarget.location;
@@ -110,7 +105,7 @@ public class Micro extends Robot {
             healingTarget = rc.senseRobotAtLocation(rc.getLocation());
             bestScore = getHealingTargetScore(healingTarget);
         }
-        for (RobotInfo r: nearbyFriends) {
+        for (RobotInfo r: Cache.nearbyFriends) {
             if (r.health == GameConstants.DEFAULT_HEALTH)
                 continue;
             double score = getHealingTargetScore(r);
@@ -193,23 +188,23 @@ public class Micro extends Robot {
         int enemyInAttackRange = 0;
         int closestFriendDis = Integer.MAX_VALUE;
 
-        for (int i = nearbyEnemies.length; --i >= 0;) {
-            RobotInfo enemy = nearbyEnemies[i];
+        for (int i = Cache.nearbyEnemies.length; --i >= 0;) {
+            RobotInfo enemy = Cache.nearbyEnemies[i];
             int dis = enemy.location.distanceSquaredTo(loc);
             closestEnemyDis = Math.min(closestEnemyDis, dis);
             if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
                 enemyInAttackRange++;
             }
         }
-        for (int i = nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(loc));
+        for (int i = Cache.nearbyFriends.length; --i >= 0;) {
+            closestFriendDis = Math.min(closestFriendDis, Cache.nearbyFriends[i].location.distanceSquaredTo(loc));
         }
         // prefer squares where you can be attacked by the fewest enemy
         score -= enemyInAttackRange * 1e6;
         // prefer squares where you are farther away from the closest enemy
         score += closestEnemyDis * 1e4;
         // prefer squares where you are closer to an ally
-        if (nearbyFriends.length > 0)
+        if (Cache.nearbyFriends.length > 0)
             score -= closestFriendDis * 1e2;
         return score;
     }
@@ -224,19 +219,19 @@ public class Micro extends Robot {
         int enemyInAttackRange = 0;
         int closestFriendDis = Integer.MAX_VALUE;
 
-        for (int i = nearbyEnemies.length; --i >= 0;) {
-            RobotInfo enemy = nearbyEnemies[i];
+        for (int i = Cache.nearbyEnemies.length; --i >= 0;) {
+            RobotInfo enemy = Cache.nearbyEnemies[i];
             if (enemy.location.distanceSquaredTo(loc) <= GameConstants.ATTACK_RADIUS_SQUARED) {
                 enemyInAttackRange++;
             }
         }
-        for (int i = nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, nearbyFriends[i].location.distanceSquaredTo(loc));
+        for (int i = Cache.nearbyFriends.length; --i >= 0;) {
+            closestFriendDis = Math.min(closestFriendDis, Cache.nearbyFriends[i].location.distanceSquaredTo(loc));
         }
         // prefer squares where you can be attacked by the fewest enemy
         score -= enemyInAttackRange * 1e4;
         // prefer squares where you are closer to an ally
-        if (nearbyFriends.length > 0)
+        if (Cache.nearbyFriends.length > 0)
             score -= closestFriendDis * 1e2;
         return score;
     }
@@ -295,19 +290,19 @@ public class Micro extends Robot {
         MapLocation c = enemyLocation.add(directionToUs.rotateRight());
         if (MapRecorder.getPassible(a) && rc.getLocation().isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED))) {
+            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
             }
         }
         if (MapRecorder.getPassible(b) && rc.getLocation().isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED))) {
+            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
             }
         }
         if (MapRecorder.getPassible(c) && rc.getLocation().isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED)) {
             // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(nearbyFriends, r -> r.location.isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED))) {
+            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED))) {
                 return false;
             }
         }
