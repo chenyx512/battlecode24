@@ -2,79 +2,98 @@ package bot1;
 
 import battlecode.common.*;
 import bot1.fast.*;
+
+import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
 public class Micro extends Robot {
-    private static RobotInfo bestTarget, closestEnemy;
+    private static MicroDirection bestMicro;
 
     static boolean act() throws GameActionException {
         // assumptions
         assert (GameConstants.ATTACK_RADIUS_SQUARED == GameConstants.HEAL_RADIUS_SQUARED) && (GameConstants.ATTACK_RADIUS_SQUARED == 4);
-        bestTarget = null;
-        closestEnemy = null;
-
-        double bestScore = Double.MIN_VALUE;
-        double closestDis = Double.MAX_VALUE;
-        for (RobotInfo r : Cache.nearbyEnemies) {
-            double score = getAttackTargetScore(r);
-            if (score > bestScore) {
-                bestScore = score;
-                bestTarget = r;
-            }
-            double dis = r.getLocation().distanceSquaredTo(rc.getLocation());
-            if (dis < closestDis) {
-                closestDis = dis;
-                closestEnemy = r;
-            }
-        }
-
         if (Cache.nearbyEnemies.length == 0) {
             // currently healing isn't too profitable, dying is faster regain of health, do not go out of way to heal
             tryHeal();
             return false;
         } else {
             tryAttack();
-            if (rc.isActionReady()) {
-                int discount = bestTarget.health <= attackHP? 1 : 0;
-                if ((Cache.nearbyEnemies.length - discount <= Cache.nearbyFriends.length
-                        && rc.getHealth() >= Constants.MIN_HEALTH_TO_ADVANCE)
-                        || bestTarget.hasFlag()) {
-                    MapLocation targetLocation = bestTarget.location;
-                    tryMove(getBestMoveDirection(loc -> getScoreForSingleEnemy(loc, targetLocation)));
-                    tryAttack();
-                    tryHeal();
-                    Debug.printString(String.format("atk%s", targetLocation.toString()));
-                } else if (!allowedToStandStill(closestEnemy.location)) {
-                    tryDropTrap();
-                    tryMove(getBestMoveDirection(Micro::getScoreForKiting));
-                    tryHeal();
-                    Debug.printString("kiteback");
-                } else { // if I can stand still I can also heal...
-                    tryDropTrap();
-                    tryHeal();
-                    Debug.printString("standheal");
-                }
-            } else {
-                if (!allowedToStandStill(closestEnemy.location)) {
-                    tryMove(getBestMoveDirection(Micro::getScoreForKiting));
-                    Debug.printString("kiteback");
-                }
-                Debug.printString("stand");
+            bestMicro = getBestMicro();
+            if (bestMicro.numAttackRangeNext > 5)
+                tryDropTrap();
+            tryMove(bestMicro.dir);
+            Debug.printString(String.format("inr%d,inrn%d,canA%d,canK%d", bestMicro.numAttackRange, bestMicro.numAttackRangeNext, bestMicro.canAttack, bestMicro.canKill));
+            tryAttack();
+            if (bestMicro.numAttackRangeNext == 0 || SpecialtyManager.isHealer()) {
+                tryHeal();
             }
             return true;
         }
     }
 
-    private static void tryAttack() throws GameActionException {
-        if (rc.canAttack(bestTarget.location)) {
-            rc.attack(bestTarget.location);
+    private static MicroDirection getBestMicro() throws GameActionException {
+        MicroDirection[] micros = new MicroDirection[9];
+        for (int i = 9; --i >= 0;)
+            micros[i] = new MicroDirection(Constants.ALL_DIRECTIONS[i]);
+        RobotInfo[] enemies = Cache.nearbyEnemies;
+        for (int i = enemies.length;
+             --i >= 0 && Clock.getBytecodesLeft() >= Constants.MICRO_MIN_BYTECODE_REMAINING;) {
+            RobotInfo enemy = enemies[i];
+            micros[0].updateEnemy(enemy);
+            micros[1].updateEnemy(enemy);
+            micros[2].updateEnemy(enemy);
+            micros[3].updateEnemy(enemy);
+            micros[4].updateEnemy(enemy);
+            micros[5].updateEnemy(enemy);
+            micros[6].updateEnemy(enemy);
+            micros[7].updateEnemy(enemy);
+            micros[8].updateEnemy(enemy);
         }
+        RobotInfo[] allies = Cache.nearbyFriends;
+        for (int i = allies.length;
+             --i >= 0 && Clock.getBytecodesLeft() >= Constants.MICRO_MIN_BYTECODE_REMAINING;) {
+            RobotInfo ally = allies[i];
+            micros[0].updateAlly(ally);
+            micros[1].updateAlly(ally);
+            micros[2].updateAlly(ally);
+            micros[3].updateAlly(ally);
+            micros[4].updateAlly(ally);
+            micros[5].updateAlly(ally);
+            micros[6].updateAlly(ally);
+            micros[7].updateAlly(ally);
+            micros[8].updateAlly(ally);
+        }
+        MicroDirection micro = micros[8];
+        for (int i = 0; i < 8; ++i) {
+            if (micros[i].isBetterThan(micro)) micro = micros[i];
+        }
+//        if (rc.getID() == 13309 && rc.getRoundNum() == 308) {
+//            bestMicro = micros[Direction.EAST.ordinal()];
+//            Debug.println(String.format("mv%d inr%d,inrn%d,canA%d,canK%d bttr%b", bestMicro.canMove, bestMicro.numAttackRange, bestMicro.numAttackRangeNext, bestMicro.canAttack, bestMicro.canKill, bestMicro.isBetterThan(micros[8])));
+//        }
+        return micro;
+    }
+
+    private static void tryAttack() throws GameActionException {
+        if (!rc.isActionReady())
+            return;
+        RobotInfo bestTarget = null;
+        double bestScore = -Double.MAX_VALUE;
+        for (RobotInfo r : rc.senseNearbyRobots(GameConstants.ATTACK_RADIUS_SQUARED, oppTeam)) {
+            double score = getAttackTargetScore(r);
+            if (score > bestScore) {
+                bestScore = score;
+                bestTarget = r;
+            }
+        }
+        if (bestTarget != null && rc.canAttack(bestTarget.location))
+            rc.attack(bestTarget.location);
     }
 
     private static void tryDropTrap() throws GameActionException {
-        if (rc.getCrumbs() < TrapType.EXPLOSIVE.buildCost || !rc.isActionReady())
+        if (rc.getCrumbs() < TrapType.EXPLOSIVE.buildCost || !rc.isActionReady() || bestMicro.closestEnemyLoc == null)
             return;
-        Direction dir = rc.getLocation().directionTo(closestEnemy.location);
+        Direction dir = rc.getLocation().directionTo(bestMicro.closestEnemyLoc);
         MapLocation loc = rc.getLocation().add(dir);
         // disallowing building traps too close to save some trap
         for (MapInfo info : rc.senseNearbyMapInfos(loc, 4)) {
@@ -91,21 +110,14 @@ public class Micro extends Robot {
     private static void tryHeal() throws GameActionException {
         if (!rc.isActionReady())
             return;
-        RobotInfo healingTarget = getHealingTarget();
-        if (healingTarget != null && rc.canHeal(healingTarget.location)) {
-            rc.heal(healingTarget.location);
-        }
-    }
-
-    private static RobotInfo getHealingTarget() throws GameActionException {
         RobotInfo healingTarget = null;
-        double bestScore = Double.MIN_VALUE;
+        double bestScore = -Double.MAX_VALUE;
         // consider self healing since senseNearbyRobot doesn't return self
         if (rc.getHealth() < GameConstants.DEFAULT_HEALTH) {
             healingTarget = rc.senseRobotAtLocation(rc.getLocation());
             bestScore = getHealingTargetScore(healingTarget);
         }
-        for (RobotInfo r: Cache.nearbyFriends) {
+        for (RobotInfo r: rc.senseNearbyRobots(GameConstants.HEAL_RADIUS_SQUARED, myTeam)) {
             if (r.health == GameConstants.DEFAULT_HEALTH)
                 continue;
             double score = getHealingTargetScore(r);
@@ -114,7 +126,8 @@ public class Micro extends Robot {
                 healingTarget = r;
             }
         }
-        return healingTarget;
+        if (healingTarget != null && rc.canHeal(healingTarget.location))
+            rc.heal(healingTarget.location);
     }
 
     private static double getRobotScore(RobotInfo r) {
@@ -153,105 +166,19 @@ public class Micro extends Robot {
     static double getHealingTargetScore(RobotInfo r) {
         if (r.health == GameConstants.DEFAULT_HEALTH)
             return -1e9;
-        double score = getRobotScore(r) / r.getHealth();
-        // prioritize anyone reachable right away
-        if (r.location.isWithinDistanceSquared(rc.getLocation(), GameConstants.HEAL_RADIUS_SQUARED)) {
-            score += 100;
-        }
-        return score;
+        return getRobotScore(r) / r.getHealth();
     }
 
     static double getAttackTargetScore(RobotInfo r) {
         double score = 0;
         if (r.health <= attackHP) // prioritize anything we can kill
             score += 1e9;
-        Direction dir = canReachInOneStep(r.location);
-        // TODO consider teammates for focus shot
-        if (dir == Direction.CENTER) {
-            score += 1e8; // prioritize anything we can shoot rn so we can kite back
-        } else if (dir != null)  {
-            if (r.hasFlag()) {
-                score += 1e8;
-            } else {
-                score += 1e7; // prioritize anything we can shoot within one move
-            }
+        if (r.hasFlag()) {
+            score += 1e8;
         }
-        if (r.hasFlag()) score += 1e6;
-        int timeToKill = r.getHealth() / attackHP;
+        int timeToKill = (r.getHealth() + attackHP - 1) / attackHP;
         score += getRobotScore(r) / timeToKill;
         return score;
-    }
-
-    private static double getScoreForKiting(MapLocation loc) {
-        double score = 0;
-        int closestEnemyDis = Integer.MAX_VALUE;
-        int enemyInAttackRange = 0;
-        int closestFriendDis = Integer.MAX_VALUE;
-
-        for (int i = Cache.nearbyEnemies.length; --i >= 0;) {
-            RobotInfo enemy = Cache.nearbyEnemies[i];
-            int dis = enemy.location.distanceSquaredTo(loc);
-            closestEnemyDis = Math.min(closestEnemyDis, dis);
-            if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
-                enemyInAttackRange++;
-            }
-        }
-        for (int i = Cache.nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, Cache.nearbyFriends[i].location.distanceSquaredTo(loc));
-        }
-        // prefer squares where you can be attacked by the fewest enemy
-        score -= enemyInAttackRange * 1e6;
-        // prefer squares where you are farther away from the closest enemy
-        score += closestEnemyDis * 1e4;
-        // prefer squares where you are closer to an ally
-        if (Cache.nearbyFriends.length > 0)
-            score -= closestFriendDis * 1e2;
-        return score;
-    }
-
-    private static double getScoreForSingleEnemy(MapLocation loc, MapLocation enemyLoc) {
-        double score = 0;
-        int dis = loc.distanceSquaredTo(enemyLoc);
-        if (dis > GameConstants.ATTACK_RADIUS_SQUARED) {
-            // prefer tiles closer to the target, up to attack range
-            score -= 1e6 * dis;
-        }
-        int enemyInAttackRange = 0;
-        int closestFriendDis = Integer.MAX_VALUE;
-
-        for (int i = Cache.nearbyEnemies.length; --i >= 0;) {
-            RobotInfo enemy = Cache.nearbyEnemies[i];
-            if (enemy.location.distanceSquaredTo(loc) <= GameConstants.ATTACK_RADIUS_SQUARED) {
-                enemyInAttackRange++;
-            }
-        }
-        for (int i = Cache.nearbyFriends.length; --i >= 0;) {
-            closestFriendDis = Math.min(closestFriendDis, Cache.nearbyFriends[i].location.distanceSquaredTo(loc));
-        }
-        // prefer squares where you can be attacked by the fewest enemy
-        score -= enemyInAttackRange * 1e4;
-        // prefer squares where you are closer to an ally
-        if (Cache.nearbyFriends.length > 0)
-            score -= closestFriendDis * 1e2;
-        return score;
-    }
-
-    private static Direction getBestMoveDirection(ToDoubleFunction<MapLocation> eval) {
-        Direction bestDirection = Direction.CENTER;
-        double bestScore = -Double.MAX_VALUE;
-        for (int i = Direction.allDirections().length; --i >= 0; ) {
-            Direction direction = Direction.allDirections()[i];
-            if (direction != Direction.CENTER && !rc.canMove(direction)) {
-                continue; // occupied
-            }
-            MapLocation location = rc.getLocation().add(direction);
-            double score = eval.applyAsDouble(location);
-            if (score > bestScore) {
-                bestScore = score;
-                bestDirection = direction;
-            }
-        }
-        return bestDirection;
     }
 
     private static Direction canReachInOneStep(MapLocation loc) {
@@ -307,5 +234,102 @@ public class Micro extends Robot {
             }
         }
         return true;
+    }
+
+    static class MicroDirection {
+        Direction dir;
+        MapLocation loc;
+        int canMove;
+        int canAttack;
+        int canKill;
+        int numAttackRange;
+        int numAttackRangeNext;
+        int allyWithinBlastRange;
+        int allyCloseCnt;
+        int minDistanceToEnemy = 99999999;
+        int canHeal;
+        int disToHealer = 9999999;
+        MapLocation closestEnemyLoc;
+
+        public MicroDirection(Direction dir) throws GameActionException {
+            this.dir = dir;
+            this.loc = rc.getLocation().add(dir);
+            if (dir == Direction.CENTER || rc.canMove(dir)) canMove = 1;
+        }
+
+        void updateEnemy(RobotInfo enemy) {
+            if (canMove == 0) return;
+            int dis = loc.distanceSquaredTo(enemy.location);
+            if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
+                numAttackRange++;
+                if (rc.isActionReady()) {
+                    canAttack = 1;
+                    if (enemy.health <= attackHP || enemy.hasFlag)
+                        canKill = 1;
+                }
+            }
+            if (dis <= 10) {
+                numAttackRangeNext++;
+            }
+            if (dis < minDistanceToEnemy) {
+                minDistanceToEnemy = dis;
+                closestEnemyLoc = enemy.location;
+            }
+        }
+
+        void updateAlly(RobotInfo ally) {
+            if (canMove == 0) return;
+            int dis = loc.distanceSquaredTo(ally.location);
+            if (dis <= 13)
+                allyWithinBlastRange++;
+            if ((SpecialtyManager.isHealer(ally) && !SpecialtyManager.isHealer() && rc.getHealth() < 800)
+                ||(!SpecialtyManager.isHealer(ally) && SpecialtyManager.isHealer() && ally.getHealth() < 800)) {
+                if (dis <= GameConstants.HEAL_RADIUS_SQUARED) {
+                    canHeal = 1;
+                }
+                if (dis < disToHealer)
+                    disToHealer = dis;
+            }
+        }
+
+        boolean isBetterThan(MicroDirection other) {
+            if (SpecialtyManager.isHealer() || rc.getHealth() < 500) {
+                if (canMove != other.canMove) return canMove > other.canMove;
+                if (numAttackRange - canKill != other.numAttackRange - other.canKill)
+                    return numAttackRange - canKill < other.numAttackRange - other.canKill;
+                if (canKill != other.canKill)
+                    return canKill > other.canKill;
+                if (canHeal != other.canHeal)
+                    return canHeal > other.canHeal;
+                return disToHealer <= other.disToHealer;
+            } else {
+                if (canMove != other.canMove) return canMove > other.canMove;
+                if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                    return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                if (canAttack != other.canAttack)
+                    return canAttack > other.canAttack;
+                if (canKill != other.canKill)
+                    return canKill > other.canKill;
+
+                if (rc.getActionCooldownTurns() < 20) {
+                    // if can attack next turn, want to have as few target as possible, but at least 1
+                    if (numAttackRangeNext != other.numAttackRangeNext) {
+                        if (numAttackRangeNext == 0) return false;
+                        if (other.numAttackRangeNext == 0) return true;
+                        return numAttackRangeNext < other.numAttackRangeNext;
+                    }
+                } else if (numAttackRangeNext != other.numAttackRangeNext) {
+                    return numAttackRangeNext < other.numAttackRangeNext;
+                }
+
+                if (allyWithinBlastRange != other.allyWithinBlastRange)
+                    return allyWithinBlastRange < other.allyWithinBlastRange;
+
+                if (minDistanceToEnemy < GameConstants.ATTACK_RADIUS_SQUARED) {
+                    return minDistanceToEnemy >= other.minDistanceToEnemy;
+                }
+                return minDistanceToEnemy <= other.minDistanceToEnemy;
+            }
+        }
     }
 }

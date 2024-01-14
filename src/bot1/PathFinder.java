@@ -7,9 +7,9 @@ public class PathFinder extends RobotPlayer{
     private static MapLocation target = null;
 
     static void randomMove() throws GameActionException {
-        int starting_i = FastMath.rand256() % Constants.directions.length;
+        int starting_i = FastMath.rand256() % Constants.MOVEABLE_DIRECTIONS.length;
         for (int i = starting_i; i < starting_i + 8; i++) {
-            Direction dir = Constants.directions[i % 8];
+            Direction dir = Constants.MOVEABLE_DIRECTIONS[i % 8];
             if (rc.canMove(dir)) rc.move(dir);
         }
     }

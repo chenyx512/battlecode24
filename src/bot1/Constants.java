@@ -1,15 +1,12 @@
 package bot1;
 
 import battlecode.common.Direction;
-import battlecode.common.GameConstants;
-
-import java.util.Random;
 
 public class Constants {
     public static boolean DEBUG_FAIL_FAST = true;
 
     /** Array containing all the possible movement directions. */
-    public static final Direction[] directions = {
+    public static final Direction[] MOVEABLE_DIRECTIONS = {
             Direction.NORTH,
             Direction.NORTHEAST,
             Direction.EAST,
@@ -18,6 +15,17 @@ public class Constants {
             Direction.SOUTHWEST,
             Direction.WEST,
             Direction.NORTHWEST,
+    };
+    public static final Direction[] ALL_DIRECTIONS = {
+            Direction.NORTH,
+            Direction.NORTHEAST,
+            Direction.EAST,
+            Direction.SOUTHEAST,
+            Direction.SOUTH,
+            Direction.SOUTHWEST,
+            Direction.WEST,
+            Direction.NORTHWEST,
+            Direction.CENTER,
     };
 
     public static final String ONE_HUNDRED_LEN_STRING = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
@@ -30,4 +38,6 @@ public class Constants {
 
     public static final int MIN_HEALTH_TO_ADVANCE = 950;
     public static final int MIN_HEALTH_TO_STAND = 751;
+
+    public static final int MICRO_MIN_BYTECODE_REMAINING = 10000;
 }
