@@ -7,7 +7,7 @@ public class MapRecorder extends RobotPlayer {
     public static final char WALL_BIT = 1 << 1;
 
     // fun fact: this costs 1 bytecode, but declaring array costs 3600
-    public static char[] vals = Constants.MAP_LEN_STRING.toCharArray();
+    public static char[] vals = Constants.STRING_LEN_4200.toCharArray();
 
     // bit 0b100 means rotational eliminated, 0b010 vertical, 0b001 horizontal
     private static int symmetry;

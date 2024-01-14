@@ -50,8 +50,7 @@ public class RoleAssigner extends RobotPlayer {
 
     private static MapLocation getRoleLocation() throws GameActionException {
         if (role == -1) {
-            Debug.println("warning: cannot find role, setting to default, hopefully game ends soon");
-            return Robot.oppSpawnCenters[rc.getID() % 3];
+            return Robot.oppSpawnCenters[SpecialtyManager.duckSeqID % 3];
         }
         if (role < 3) {
             return Util.int2loc(Comms.readMyflagsLoc(role));
@@ -106,9 +105,14 @@ public class RoleAssigner extends RobotPlayer {
                         Util.int2loc(Comms.readMyflagsLoc(newRole)));
             } else {
                 // for not distressed friendly flag, one and only one duck sits on it
-                if (role == newRole)
+                // builder never sits on flag
+                if (SpecialtyManager.isBuilder()) {
+                    return -1;
+                } else if (role == newRole) {
                     return Comms.readMyflagsAssigned(newRole) > 1 ? -1 : 1;
-                return Comms.readMyflagsAssigned(newRole) > 0 ? -1 : 1;
+                } else {
+                    return Comms.readMyflagsAssigned(newRole) > 0 ? -1 : 1;
+                }
             }
         } else {
             int flagid = newRole - 3;

@@ -22,7 +22,9 @@ public class Micro extends Robot {
         } else {
             tryAttack();
             bestMicro = getBestMicro();
-            if (Cache.nearbyEnemies.length > 5)
+            if (bestMicro.canAttack == 0 &&
+                    (bot1.SpecialtyManager.isBuilder() ||
+                            (bestMicro.builderDis > 9999 && Cache.nearbyEnemies.length > 5)))
                 tryDropTrap();
             tryMove(bestMicro.dir);
             Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
@@ -70,10 +72,6 @@ public class Micro extends Robot {
         for (int i = 0; i < 8; ++i) {
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
-//        if (rc.getID() == 13309 && rc.getRoundNum() == 308) {
-//            bestMicro = micros[Direction.EAST.ordinal()];
-//            Debug.println(String.format("mv%d inr%d,inrn%d,canA%d,canK%d bttr%b", bestMicro.canMove, bestMicro.numAttackRange, bestMicro.numAttackRangeNext, bestMicro.canAttack, bestMicro.canKill, bestMicro.isBetterThan(micros[8])));
-//        }
         return micro;
     }
 
@@ -94,19 +92,20 @@ public class Micro extends Robot {
     }
 
     private static void tryDropTrap() throws GameActionException {
-        if (rc.getCrumbs() < TrapType.EXPLOSIVE.buildCost || !rc.isActionReady() || bestMicro.closestEnemyLoc == null)
+        if (!rc.isActionReady() || bestMicro.closestEnemyLoc == null)
             return;
         Direction dir = rc.getLocation().directionTo(bestMicro.closestEnemyLoc);
         MapLocation loc = rc.getLocation().add(dir);
-        // disallowing building traps too close to save some trap
-        for (MapInfo info : rc.senseNearbyMapInfos(loc, 4)) {
-            if (info.getTrapType() != TrapType.NONE)
-                return;
-        }
         if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
             rc.build(TrapType.EXPLOSIVE, loc);
-        } else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()) && rc.sensePassability(loc)) {
-            rc.build(TrapType.EXPLOSIVE, rc.getLocation());
+        }
+        loc = rc.getLocation().add(dir.rotateLeft());
+        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+            rc.build(TrapType.EXPLOSIVE, loc);
+        }
+        loc = rc.getLocation().add(dir.rotateLeft());
+        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+            rc.build(TrapType.EXPLOSIVE, loc);
         }
     }
 
@@ -253,6 +252,8 @@ public class Micro extends Robot {
         int allyWithinBlastRange;
         int allyCloseCnt;
         int minDistanceToEnemy = 99999999;
+        int minDistanceToAlly = 99999999;
+        int builderDis = 99999999;
         int canHeal;
         int disToHealer = 9999999;
         MapLocation closestEnemyLoc;
@@ -296,10 +297,34 @@ public class Micro extends Robot {
                 if (dis < disToHealer)
                     disToHealer = dis;
             }
+            if (dis < minDistanceToAlly) {
+                minDistanceToAlly = dis;
+            }
+            if (SpecialtyManager.isBuilder(ally)) {
+                builderDis = dis;
+            }
         }
 
         boolean isBetterThan(MicroDirection other) {
-            if (SpecialtyManager.isHealer() || rc.getHealth() < 500) {
+            if (bot1.SpecialtyManager.isBuilder()) {
+                // play safe as builder
+                if (canMove != other.canMove) return canMove > other.canMove;
+                if (numAttackRange - canKill != other.numAttackRange - other.canKill)
+                    return numAttackRange - canKill < other.numAttackRange - other.canKill;
+                if (canKill != other.canKill)
+                    return canKill > other.canKill;
+                if (canAttack != other.canAttack)
+                    return canAttack > other.canAttack;
+                if (numAttackRangeNext != other.numAttackRangeNext) {
+                    return numAttackRangeNext < other.numAttackRangeNext;
+                }
+                if (builderDis != other.builderDis)
+                    return builderDis > other.builderDis;
+                if (minDistanceToAlly != other.minDistanceToAlly)
+                    return minDistanceToAlly < other.minDistanceToAlly;
+                return minDistanceToEnemy <= other.minDistanceToEnemy;
+            } else if (SpecialtyManager.isHealer() || rc.getHealth() < 500) {
+                // healing oriented
                 if (canMove != other.canMove) return canMove > other.canMove;
                 if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                     return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
@@ -314,32 +339,32 @@ public class Micro extends Robot {
                 }
                 return minDistanceToEnemy >= other.minDistanceToEnemy;
             } else {
-                if (canMove != other.canMove) return canMove > other.canMove;
-                if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
-                    return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
-                if (canAttack != other.canAttack)
-                    return canAttack > other.canAttack;
-                if (canKill != other.canKill)
-                    return canKill > other.canKill;
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                        return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
 
-                if (rc.getActionCooldownTurns() < 20) {
-                    // if can attack next turn, want to have as few target as possible, but at least 1
-                    if (numAttackRangeNext != other.numAttackRangeNext) {
-                        if (numAttackRangeNext == 0) return false;
-                        if (other.numAttackRangeNext == 0) return true;
+                    if (rc.getActionCooldownTurns() < 20) {
+                        // if can attack next turn, want to have as few target as possible, but at least 1
+                        if (numAttackRangeNext != other.numAttackRangeNext) {
+                            if (numAttackRangeNext == 0) return false;
+                            if (other.numAttackRangeNext == 0) return true;
+                            return numAttackRangeNext < other.numAttackRangeNext;
+                        }
+                    } else if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
                     }
-                } else if (numAttackRangeNext != other.numAttackRangeNext) {
-                    return numAttackRangeNext < other.numAttackRangeNext;
-                }
 
-                if (allyWithinBlastRange != other.allyWithinBlastRange)
-                    return allyWithinBlastRange < other.allyWithinBlastRange;
+                    if (allyWithinBlastRange != other.allyWithinBlastRange)
+                        return allyWithinBlastRange < other.allyWithinBlastRange;
 
-                if (minDistanceToEnemy < GameConstants.ATTACK_RADIUS_SQUARED) {
-                    return minDistanceToEnemy >= other.minDistanceToEnemy;
-                }
-                return minDistanceToEnemy <= other.minDistanceToEnemy;
+                    if (minDistanceToEnemy < GameConstants.ATTACK_RADIUS_SQUARED) {
+                        return minDistanceToEnemy >= other.minDistanceToEnemy;
+                    }
+                    return minDistanceToEnemy <= other.minDistanceToEnemy;
             }
         }
     }

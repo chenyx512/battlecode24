@@ -81,16 +81,19 @@ public class FlagManager extends RobotPlayer {
                     }
                     Comms.writeOppflagsCarried(flagIndex, 0);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
-                    if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
-                            && !rc.getLocation().isAdjacentTo(flag.getLocation())) {
-                        // a dropped flag away from us, pick it up ASAP
-                        PathFinder.move(flag.getLocation());
-                    }
-                    if (rc.canPickupFlag(flag.getLocation())) {
-                        flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
-                        carriedEnemyFlagIndex = flagIndex;
-                        rc.pickupFlag(flag.getLocation());
-                        break;
+                    if (!SpecialtyManager.isBuilder()) {
+                        // builder is free from flag duty
+                        if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
+                                && !rc.getLocation().isAdjacentTo(flag.getLocation())) {
+                            // a dropped flag away from us, pick it up ASAP
+                            PathFinder.move(flag.getLocation());
+                        }
+                        if (rc.canPickupFlag(flag.getLocation())) {
+                            flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
+                            carriedEnemyFlagIndex = flagIndex;
+                            rc.pickupFlag(flag.getLocation());
+                            break;
+                        }
                     }
                 }
             }
