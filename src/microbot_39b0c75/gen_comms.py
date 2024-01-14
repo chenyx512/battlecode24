@@ -8,12 +8,6 @@ from pathlib import Path
 import sys
 
 SCHEMA = {
-    'sync': {
-        'slots': 1,
-        'bits': {
-            'id': 12,
-        }
-    },
     'HQ': {
         'slots': 3,
         'bits': {

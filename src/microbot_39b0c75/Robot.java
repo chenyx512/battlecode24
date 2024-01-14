@@ -22,7 +22,6 @@ public class Robot extends RobotPlayer {
         RoleAssigner.initTurn(); // takes care of spawning
         FlagManager.initTurn();
         Cache.initTurn();
-        SpecialtyManager.initTurn();
 
         // updates self stats
         attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
@@ -38,18 +37,18 @@ public class Robot extends RobotPlayer {
     }
 
     static void play() throws GameActionException {
-//        if (isMaster && rc.getRoundNum() % 10 == 0) {
-//            for (int i = 0; i < 3; i++) {
-//                System.out.printf("id%d exist%d carried%d loc%s oriloc%s\n",
-//                        Comms.readOppflagsId(i), Comms.readOppflagsExists(i), Comms.readOppflagsCarried(i),
-//                        Util.toString(Util.int2loc(Comms.readOppflagsLoc(i))), Util.toString(Util.int2loc(Comms.readOppflagsOriginalLoc(i))));
-//            }
-//            StringBuilder sb = new StringBuilder();
-//            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readMyflagsAssigned(i)));
-//            sb.append(" /ATTK ");
-//            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readOppflagsAssigned(i)));
-//            System.out.println(sb.toString());
-//        }
+        if (isMaster && rc.getRoundNum() % 10 == 0) {
+            for (int i = 0; i < 3; i++) {
+                System.out.printf("id%d exist%d carried%d loc%s oriloc%s\n",
+                        Comms.readOppflagsId(i), Comms.readOppflagsExists(i), Comms.readOppflagsCarried(i),
+                        Util.toString(Util.int2loc(Comms.readOppflagsLoc(i))), Util.toString(Util.int2loc(Comms.readOppflagsOriginalLoc(i))));
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readMyflagsAssigned(i)));
+            sb.append(" /ATTK ");
+            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readOppflagsAssigned(i)));
+            System.out.println(sb.toString());
+        }
         if (!rc.isSpawned()) {
             return;
         }
