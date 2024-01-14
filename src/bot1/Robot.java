@@ -58,7 +58,7 @@ public class Robot extends RobotPlayer {
         if (FlagManager.act())
             return;
 
-        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
+        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS && RoleAssigner.role > 2) {
             if (findCrumb())
                 return;
             PathFinder.move(Explorer.getUnseenExploreTarget());

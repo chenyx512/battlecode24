@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class RoleAssigner extends RobotPlayer {
     // -1 for unassigned, 0-2 for friendly flag defense, 3-5 for enemy flag attack
-    private static int role = -1;
+    public static int role = -1;
     private static final int MAX_ASSIGNMENT = 15;
 
     public static void initTurn() throws GameActionException {

@@ -12,6 +12,9 @@ public class Micro extends Robot {
     static boolean act() throws GameActionException {
         // assumptions
         assert (GameConstants.ATTACK_RADIUS_SQUARED == GameConstants.HEAL_RADIUS_SQUARED) && (GameConstants.ATTACK_RADIUS_SQUARED == 4);
+        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS)
+            return false;
+
         if (Cache.nearbyEnemies.length == 0) {
             // currently healing isn't too profitable, dying is faster regain of health, do not go out of way to heal
             tryHeal();
@@ -19,10 +22,10 @@ public class Micro extends Robot {
         } else {
             tryAttack();
             bestMicro = getBestMicro();
-            if (bestMicro.numAttackRangeNext > 5)
+            if (Cache.nearbyEnemies.length > 5)
                 tryDropTrap();
             tryMove(bestMicro.dir);
-            Debug.printString(String.format("inr%d,inrn%d,canA%d,canK%d", bestMicro.numAttackRange, bestMicro.numAttackRangeNext, bestMicro.canAttack, bestMicro.canKill));
+            Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
             tryAttack();
             if (bestMicro.numAttackRangeNext == 0 || SpecialtyManager.isHealer()) {
                 tryHeal();
@@ -100,9 +103,9 @@ public class Micro extends Robot {
             if (info.getTrapType() != TrapType.NONE)
                 return;
         }
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc)) {
+        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
             rc.build(TrapType.EXPLOSIVE, loc);
-        } else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation())) {
+        } else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()) && rc.sensePassability(loc)) {
             rc.build(TrapType.EXPLOSIVE, rc.getLocation());
         }
     }
@@ -166,7 +169,10 @@ public class Micro extends Robot {
     static double getHealingTargetScore(RobotInfo r) {
         if (r.health == GameConstants.DEFAULT_HEALTH)
             return -1e9;
-        return getRobotScore(r) / r.getHealth();
+        double score = getRobotScore(r) / r.getHealth();
+        if (!SpecialtyManager.isHealer(r))
+            score += 1e5; // prioritize non-healers, since they always more important
+        return score;
     }
 
     static double getAttackTargetScore(RobotInfo r) {
@@ -283,7 +289,7 @@ public class Micro extends Robot {
             if (dis <= 13)
                 allyWithinBlastRange++;
             if ((SpecialtyManager.isHealer(ally) && !SpecialtyManager.isHealer() && rc.getHealth() < 800)
-                ||(!SpecialtyManager.isHealer(ally) && SpecialtyManager.isHealer() && ally.getHealth() < 800)) {
+                ||(!SpecialtyManager.isHealer(ally) && SpecialtyManager.isHealer() && ally.getHealth() < 1000 - healHP)) {
                 if (dis <= GameConstants.HEAL_RADIUS_SQUARED) {
                     canHeal = 1;
                 }
@@ -295,13 +301,18 @@ public class Micro extends Robot {
         boolean isBetterThan(MicroDirection other) {
             if (SpecialtyManager.isHealer() || rc.getHealth() < 500) {
                 if (canMove != other.canMove) return canMove > other.canMove;
-                if (numAttackRange - canKill != other.numAttackRange - other.canKill)
-                    return numAttackRange - canKill < other.numAttackRange - other.canKill;
+                if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                    return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                if (canAttack != other.canAttack)
+                    return canAttack > other.canAttack;
                 if (canKill != other.canKill)
                     return canKill > other.canKill;
-                if (canHeal != other.canHeal)
-                    return canHeal > other.canHeal;
-                return disToHealer <= other.disToHealer;
+                if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
+                    if (canHeal != other.canHeal)
+                        return canHeal > other.canHeal;
+                    return disToHealer <= other.disToHealer;
+                }
+                return minDistanceToEnemy >= other.minDistanceToEnemy;
             } else {
                 if (canMove != other.canMove) return canMove > other.canMove;
                 if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
