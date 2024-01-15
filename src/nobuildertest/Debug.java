@@ -1,11 +1,12 @@
 // shamelessly copied from 4 musketeer https://github.com/maxwelljones14/BattleCode2023/blob/main/src/MPWorking/Debug.java
-package microbot_39b0c75;
+package nobuildertest;
 
 import battlecode.common.*;
 
 public class Debug extends RobotPlayer {
-    static final boolean VERBOSE = false;
+    static final boolean VERBOSE = true;
     public static final boolean INFO = true;
+    public static final boolean SPECIALTY = true;
     public static final boolean PATHFINDING = true;
     public static final boolean INDICATORS = true;
     public static final boolean ASSIGNMENT = true;

@@ -1,4 +1,4 @@
-package bot1;
+package nobuildertest;
 
 import battlecode.common.*;
 
@@ -6,26 +6,27 @@ public class SpecialtyManager extends RobotPlayer {
     public static int duckSeqID;
     private static char[] duckID2seq = Constants.STRING_LEN_4200.toCharArray();
     private static int seqIDcnt;
-    public static int buildLevel, attackLevel, healLevel;
+    private static int buildLevel, attackLevel, healLevel;
 
+    // 0-1: builder
+    // 2-25: fighter
+    // 26+: healer
     public static boolean isBuilder() {
-        return duckSeqID > 0 && duckSeqID <= Constants.NUM_BUILDER;
+//        return rc.getRoundNum() > 50 && duckSeqID < 2;
+        return false;
     }
 
     public static boolean isBuilder(RobotInfo r) {
-        int seq = duckID2seq[r.getID() % 4096];
-        return seq > 0 && seq <= Constants.NUM_BUILDER;
+//        return rc.getRoundNum() > 50 && duckID2seq[r.getID() % 4096] < 2;
+        return false;
     }
 
     public static boolean isHealer() {
-        return duckSeqID > Constants.NUM_BUILDER
-                && duckSeqID <= Constants.NUM_BUILDER + Constants.NUM_HEALER;
+        return duckSeqID > 25;
     }
 
     public static boolean isHealer(RobotInfo r) {
-        int seq = duckID2seq[r.getID() % 4096];
-        return seq > Constants.NUM_BUILDER
-                && seq <= Constants.NUM_BUILDER + Constants.NUM_HEALER;
+        return duckID2seq[r.getID() % 4096] > 25;
     }
 
     public static boolean act() throws GameActionException {
@@ -65,14 +66,14 @@ public class SpecialtyManager extends RobotPlayer {
             if (Comms.readSyncId() == 0) {
                 // my turn to report ID
                 Comms.writeSyncId(rc.getID() % 4096);
-                duckSeqID = ++seqIDcnt;
+                duckSeqID = seqIDcnt++;
                 duckID2seq[rc.getID() % 4096] = (char) duckSeqID;
                 Debug.println(Debug.SPECIALTY, String.format("duck id %d seq %d", rc.getID(), duckSeqID));
             } else {
                 if (Comms.readSyncId() == rc.getID() % 4096) {
                     Comms.writeSyncId(0);
                 } else {
-                    duckID2seq[Comms.readSyncId()] = (char) ++seqIDcnt;
+                    duckID2seq[Comms.readSyncId()] = (char) seqIDcnt++;
                 }
             }
         }

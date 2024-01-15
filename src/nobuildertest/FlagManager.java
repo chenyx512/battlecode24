@@ -1,4 +1,4 @@
-package bot1;
+package nobuildertest;
 
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
@@ -66,7 +66,6 @@ public class FlagManager extends RobotPlayer {
         for (FlagInfo flag : rc.senseNearbyFlags(-1)) {
             if (flag.getTeam() == myTeam) {
                 int flagIndex = getMyFlagIndex(flag);
-                Comms.writeMyflagsExists(flagIndex, 1);
                 if ((flag.isPickedUp() && rc.getRoundNum() > 200)
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
                     Comms.writeMyflagsDistress(flagIndex, 1);

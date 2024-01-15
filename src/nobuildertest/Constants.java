@@ -1,4 +1,4 @@
-package bot1;
+package nobuildertest;
 
 import battlecode.common.Direction;
 
@@ -40,7 +40,4 @@ public class Constants {
     public static final int MIN_HEALTH_TO_STAND = 751;
 
     public static final int MICRO_MIN_BYTECODE_REMAINING = 10000;
-
-    public static final int NUM_BUILDER = 3;
-    public static final int NUM_HEALER = 24;
 }

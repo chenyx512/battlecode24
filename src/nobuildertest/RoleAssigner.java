@@ -1,9 +1,9 @@
-package bot1;
+package nobuildertest;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
-import bot1.fast.FastMath;
+import nobuildertest.fast.FastMath;
 
 import java.util.Map;
 
@@ -21,17 +21,6 @@ public class RoleAssigner extends RobotPlayer {
                 updateRole();
                 findBestSpawn();
             }
-        } else {
-            updateRole();
-            if (role >= 0 && role < 3 && Comms.readMyflagsAssigned(role) == 1 && rc.getRoundNum() > 200) {
-                // if I am the only one guarding this flag and I can't sense flag loc, distress call
-                if (!Util.int2loc(Comms.readMyflagsLoc(role)).isWithinDistanceSquared(rc.getLocation(), 20)) {
-                    Comms.writeMyflagsDistress(role, 1);
-                } else if (Comms.readMyflagsOriginalLoc(role) == Comms.readMyflagsLoc(role)
-                        && rc.senseNearbyFlags(-1, myTeam).length == 0) {
-                    Comms.writeMyflagsExists(role, 0);
-                }
-            }
         }
         Debug.printString(Debug.INFO, String.format("r%d", role));
     }
@@ -47,6 +36,7 @@ public class RoleAssigner extends RobotPlayer {
     }
 
     public static void act() throws GameActionException {
+        updateRole();
         MapLocation loc = getRoleLocation();
         if (loc == null) {
             return;
@@ -114,14 +104,11 @@ public class RoleAssigner extends RobotPlayer {
                 return getDistressScore(Comms.readMyflagsAssigned(newRole),
                         Util.int2loc(Comms.readMyflagsLoc(newRole)));
             } else {
-                MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(newRole));
                 // for not distressed friendly flag, one and only one duck sits on it
                 // builder never sits on flag
-                if (SpecialtyManager.isBuilder() || SpecialtyManager.isHealer()) {
+                if (SpecialtyManager.isBuilder()) {
                     return -1;
-                } else if (rc.isSpawned() && !rc.getLocation().isWithinDistanceSquared(flagLoc, 20) && rc.getRoundNum() > 200) {
-                    return -1;
-                } else if (role == newRole){
+                } else if (role == newRole) {
                     return Comms.readMyflagsAssigned(newRole) > 1 ? -1 : 1;
                 } else {
                     return Comms.readMyflagsAssigned(newRole) > 0 ? -1 : 1;
@@ -131,7 +118,7 @@ public class RoleAssigner extends RobotPlayer {
             int flagid = newRole - 3;
             if (Comms.readOppflagsExists(flagid) == 0)
                 return -1;
-            if (Comms.readOppflagsCarried(flagid) == 1 && Comms.readOppflagsAssigned(flagid) < MAX_ASSIGNMENT) {
+            if (Comms.readOppflagsCarried(flagid) == 1) {
                 return getDistressScore(Comms.readOppflagsAssigned(flagid),
                         Util.int2loc(Comms.readOppflagsLoc(flagid)));
             } else {
@@ -148,9 +135,8 @@ public class RoleAssigner extends RobotPlayer {
                 :  Robot.getDisToMyClosestSpawnCenter(loc);
         final double MIN_DIS = 8;
         dis = Math.max(Math.sqrt(dis), MIN_DIS);
-        double disScore = Math.max(0.02, 1 - (dis - MIN_DIS) / (W + H) * 5);
-        // limit distress call to max assignment
-        double assignedScore = Math.max(0, 1 - (double) numAssigned / MAX_ASSIGNMENT);
+        double disScore = Math.max(0.05, 1 - (dis - MIN_DIS) / (W + H) * 4);
+        double assignedScore = Math.max(0.05, 1 - (double) numAssigned / MAX_ASSIGNMENT);
         return disScore * assignedScore;
     }
 
@@ -186,29 +172,18 @@ public class RoleAssigner extends RobotPlayer {
 
     private static void findBestSpawn() throws GameActionException {
         MapLocation bestSpawn = null;
-        if (role >= 3 || role == -1) {
-            // for offense role, rng to spread out
-            int start = FastMath.rand256();
-            MapLocation[] spawns = rc.getAllySpawnLocations();
-            for (int i = start; i < start + 27; i++) {
-                if (rc.canSpawn(spawns[i % 27])) {
-                    rc.spawn(spawns[i % 27]);
+        updateRole();
+        MapLocation missionLoc = getRoleLocation();
+        int bestDis = Integer.MAX_VALUE;
+        for (MapLocation loc : rc.getAllySpawnLocations()) {
+            if (rc.canSpawn(loc)) {
+                int dis =  loc.distanceSquaredTo(missionLoc);
+                if (dis < bestDis) {
+                    bestDis = dis;
+                    bestSpawn = loc;
                 }
             }
-        } else {
-            // for defense role, spawn the closest
-            MapLocation missionLoc = getRoleLocation();
-            int bestDis = Integer.MAX_VALUE;
-            for (MapLocation loc : rc.getAllySpawnLocations()) {
-                if (rc.canSpawn(loc)) {
-                    int dis =  loc.distanceSquaredTo(missionLoc);
-                    if (dis < bestDis) {
-                        bestDis = dis;
-                        bestSpawn = loc;
-                    }
-                }
-            }
-            rc.spawn(bestSpawn);
         }
+        rc.spawn(bestSpawn);
     }
 }
