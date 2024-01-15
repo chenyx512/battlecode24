@@ -37,7 +37,8 @@ public class Micro extends Robot {
                 playSafe = true;
             tryAttack();
             bestMicro = getBestMicro();
-            if (bestMicro.canAttack == 0 && SpecialtyManager.isBuilder())
+            if (bestMicro.canAttack == 0 &&
+                    (SpecialtyManager.isBuilder() || (rc.getCrumbs() > 2000 && rc.getRoundNum() > 300 && Cache.nearbyEnemies.length > 5)))
                 tryDropTrap();
             tryMove(bestMicro.dir);
             Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
@@ -109,6 +110,22 @@ public class Micro extends Robot {
             return;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
         MapLocation loc = rc.getLocation().add(dir);
+        MapLocation nextLoc = loc.add(dir);
+        // avoid dropping trap when there is obstacle in between
+        if (rc.canSenseLocation(nextLoc) && rc.senseMapInfo(nextLoc).isWall())
+            return;
+        // stun is pretty hard to mix rn, leaving out
+//        boolean canStun = true;
+//        for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
+//            MapLocation newLoc = loc.add(d);
+//            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() == TrapType.STUN) {
+//                canStun = false;
+//                break;
+//            }
+//        }
+//        if (canStun && Cache.nearbyFriends.length > 5 && rc.canBuild(TrapType.STUN, loc)) {
+//            rc.build(TrapType.STUN, loc);
+//        }
         if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
             rc.build(TrapType.EXPLOSIVE, loc);
         }
@@ -260,6 +277,7 @@ public class Micro extends Robot {
         Direction dir;
         MapLocation loc;
         int canMove;
+        int needFill;
         int canAttack;
         int canKill;
         int numAttackRange;
@@ -276,7 +294,14 @@ public class Micro extends Robot {
         public MicroDirection(Direction dir) throws GameActionException {
             this.dir = dir;
             this.loc = rc.getLocation().add(dir);
-            if (dir == Direction.CENTER || rc.canMove(dir)) canMove = 1;
+            if (dir == Direction.CENTER || rc.canMove(dir)) {
+                canMove = 1;
+            }
+            // allow micro water filling
+            else if (rc.canFill(this.loc) && Cache.nearbyFriends.length > 5) {
+                canMove = 1;
+                needFill = 1;
+            }
         }
 
         void updateEnemy(RobotInfo enemy) {

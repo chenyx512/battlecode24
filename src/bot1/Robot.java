@@ -145,7 +145,11 @@ public class Robot extends RobotPlayer {
     public static void tryMove(Direction dir) throws GameActionException {
         if (dir == Direction.CENTER)
             return;
-        rc.move(dir);
+        if (rc.canMove(dir)) {
+            rc.move(dir);
+        } else if (rc.canFill(rc.getLocation().add(dir))) {
+            rc.fill(rc.getLocation().add(dir));
+        }
     }
 }
 // code remnants for spawn camping, not working because defense is too strong
