@@ -3,7 +3,7 @@ package bot1;
 import battlecode.common.*;
 import bot1.fast.*;
 
-public class PathFinder extends RobotPlayer{
+public class PathFinder extends Robot {
     private static MapLocation target = null;
 
     static void randomMove() throws GameActionException {
@@ -50,208 +50,234 @@ public class PathFinder extends RobotPlayer{
         }
         Direction dir = BugNav.getMoveDir();
         if (dir != null && !rc.getLocation().add(dir).isAdjacentTo(carrierLoc))
-            rc.move(dir);
+            tryMove(dir);
     }
 
     static public void move(MapLocation loc) throws GameActionException {
         if (!rc.isMovementReady() || loc == null)
             return;
-        Debug.printString(Debug.PATHFINDING, String.format("move%s", loc.toString()));
         target = loc;
         Direction dir = BugNav.getMoveDir();
         if (dir == null)
             return;
-        rc.move(dir);
+        Debug.printString(Debug.PATHFINDING, String.format("move%sdir%s", loc.toString(), Util.toString(dir)));
+        tryMove(dir);
     }
 
     static class BugNav {
-
-        static final int INF = 1000000;
-        static final int MAX_MAP_SIZE = GameConstants.MAP_MAX_HEIGHT;
-
-        static boolean shouldGuessRotation = true; // if I should guess which rotation is the best
-        static boolean rotateRight = true; // if I should rotate right or left
-        static MapLocation lastObstacleFound = null; // latest obstacle I've found in my way
-        static int minDistToEnemy = INF; // minimum distance I've been to the enemy while going around an obstacle
+        static DirectionStack dirStack = new DirectionStack();
         static MapLocation prevTarget = null; // previous target
-        static boolean hasRotatedAvoidingCurrent = false; // if I've rotated due to the current obstacle
-        static FastIntSet visited = new FastIntSet();
-        static int id = 12620;
+        static int currentTurnDir = 0;
+        static final int MAX_DEPTH = 25;
+        static final int BYTECODE_CUTOFF = 6000;
+
+        static Direction turn(Direction dir) {
+            return currentTurnDir == 0 ? dir.rotateLeft() : dir.rotateRight();
+        }
+
+        static Direction turn(Direction dir, int turnDir) {
+            return turnDir == 0 ? dir.rotateLeft() : dir.rotateRight();
+        }
 
         static Direction getMoveDir() throws GameActionException {
-            try {
-                // different target? ==> previous data does not help!
-                if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
-                    // Debug.println("New target: " + target, id);
-                    resetPathfinding();
-                }
-
-                // If I'm at a minimum distance to the target, I'm free!
-                MapLocation myLoc = rc.getLocation();
-                // int d = myLoc.distanceSquaredTo(target);
-                int d = Util.distance(myLoc, target);
-                if (d < minDistToEnemy) {
-                    // Debug.println("New min dist: " + d + " Old: " + minDistToEnemy, id);
-                    resetPathfinding();
-                    minDistToEnemy = d;
-                }
-
-                int code = getCode();
-
-                if (visited.contains(code)) {
-                    // Debug.println("Contains code", id);
-                    resetPathfinding();
-                }
-                visited.add(code);
-
-                // Update data
-                prevTarget = target;
-
-                // If there's an obstacle I try to go around it [until I'm free] instead of
-                // going to the target directly
-                Direction dir = myLoc.directionTo(target);
-                if (lastObstacleFound != null) {
-                    // Debug.println("Last obstacle found: " + lastObstacleFound, id);
-                    dir = myLoc.directionTo(lastObstacleFound);
-                }
-                MapLocation nextLoc = myLoc.add(dir);
-                boolean avoidingCurrent = false;
-                if (rc.canMove(dir)) {
-                    // Debug.println("can move: " + dir, id);
-                    resetPathfinding();
-                }
-
-                // I rotate clockwise or counterclockwise (depends on 'rotateRight'). If I try
-                // to go out of the map I change the orientation
-                // Note that we have to try at most 16 times since we can switch orientation in
-                // the middle of the loop. (It can be done more efficiently)
-                for (int i = 8; i-- > 0;) {
-                    MapLocation newLoc = myLoc.add(dir);
-                    if (rc.canSenseLocation(newLoc)) {
-                        MapInfo info = rc.senseMapInfo(newLoc);
-                        if (info.isWater() && rc.getCrumbs() >= Constants.CRUMBS_MIN_FOR_FILLING) {
-                            if (rc.canFill(newLoc)) {
-                                rc.fill(newLoc);
-                                // note that flag carrier cannot fill!
-                                return null;
-                            }
-                        }
-                        if (rc.canMove(dir)) {
-                            // Debug.println("Moving in dir: " + dir, id);
-                            return dir;
-                        } else if (rc.senseRobotAtLocation(newLoc) != null) {
-                            if (FastMath.rand256() % 8 == 0) {
-                                // wait with some prob to avoid dead looping with friendly robot
-                                return null;
-                            }
-                        }
-                    }
-
-                    if (!rc.onTheMap(newLoc)) {
-                        rotateRight = !rotateRight;
-                    } else if (!rc.sensePassability(newLoc)) {
-                        // This is the latest obstacle found if
-                        // - I can't move there
-                        // - It's on the map
-                        // - It's not passable
-                        lastObstacleFound = newLoc;
-                        // Debug.println("Found obstacle: " + lastObstacleFound, id);
-
-                        // We assume that if we're avoiding a current and we hit
-                        // an obstacle, we should rotate the other way since
-                        // the other way is probably open.
-
-                        // If this happens twice, we don't try to switch rotation.
-                        // This would be a problem if the devs make a map like
-                        // XXXXXX
-                        // ---<--
-                        // --O<--
-                        // ---<--
-                        // XXXXXX
-                        if (shouldGuessRotation) {
-                            // Debug.println("Inferring rot dir around: " + lastObstacleFound, id);
-//                            if (MapTracker.canInferRotationAroundObstacle(lastObstacleFound)) {
-//                                shouldGuessRotation = false;
-//                                if (!MapTracker.isAdjacentToPOI(myLoc, lastObstacleFound)) {
-//                                    rotateRight = MapTracker.shouldRotateRightAroundObstacle(
-//                                            lastObstacleFound, myLoc, target);
-//                                }
-//                                // Debug.println("Inferred: " + rotateRight, id);
-//                            }
-                        } else if (shouldGuessRotation) {
-                            // Guessing rotation not on an obstacle is different.
-                            shouldGuessRotation = false;
-                            // Debug.println("Guessing rot dir", id);
-                            // Rotate left and right and find the first dir that you can move in
-                            Direction dirL = dir;
-                            for (int j = 8; j-- > 0;) {
-                                if (rc.canMove(dirL))
-                                    break;
-                                dirL = dirL.rotateLeft();
-                            }
-
-                            Direction dirR = dir;
-                            for (int j = 8; j-- > 0;) {
-                                if (rc.canMove(dirR))
-                                    break;
-                                dirR = dirR.rotateRight();
-                            }
-
-                            // Check which results in a location closer to the target
-                            MapLocation locL = myLoc.add(dirL);
-                            MapLocation locR = myLoc.add(dirR);
-
-                            int lDist = Util.distance(target, locL);
-                            int rDist = Util.distance(target, locR);
-                            int lDistSq = target.distanceSquaredTo(locL);
-                            int rDistSq = target.distanceSquaredTo(locR);
-
-                            if (lDist < rDist) {
-                                rotateRight = false;
-                            } else if (rDist < lDist) {
-                                rotateRight = true;
-                            } else {
-                                rotateRight = rDistSq < lDistSq;
-                            }
-
-                            // Debug.println("Guessed: " + rotateRight, id);
-                        }
-                    }
-
-                    if (rotateRight)
-                        dir = dir.rotateRight();
-                    else
-                        dir = dir.rotateLeft();
-                }
-
-                if (rc.canMove(dir)) {
+            // different target? ==> previous data does not help!
+            if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
+                // Debug.println("New target: " + target, id);
+                Debug.println(Debug.PATHFINDING, "New target");
+                resetPathfinding();
+            }
+            prevTarget = target;
+            if (dirStack.size == 0) {
+                Direction dir = rc.getLocation().directionTo(target);
+                if (canMoveOrFill(dir)) {
                     return dir;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                Direction dirL = dir.rotateLeft();
+                if (canMoveOrFill(dirL)) {
+                    return dirL;
+                }
+                Direction dirR = dir.rotateRight();
+                if (canMoveOrFill(dirR)) {
+                    return dirR;
+                }
+                currentTurnDir = getTurnDir(dir);
+                // obstacle encountered, rotate and add new dirs to stack
+                while (!canMoveOrFill(dir) && dirStack.size < 8) {
+                    if (!rc.onTheMap(rc.getLocation().add(dir))) {
+                        currentTurnDir ^= 1;
+                        dirStack.clear();
+                        return null; // do not move
+                    }
+                    dirStack.push(dir);
+                    dir = turn(dir);
+                }
+                if (dirStack.size == 8) {
+                    Debug.println(Debug.PATHFINDING, "blocked");
+                }
+                else {
+                    return dir;
+                }
             }
-            // Debug.println("Last exit", id);
+            else {
+                // TODO: don't understand this (why pop 2?)
+                // dxx
+                // xo
+                // x
+                // suppose you are at o, x is wall, and d is another duck, you are pathing left and bugging up rn
+                // and the duck moves away, you wanna take its spot
+                if (dirStack.size > 1 && canMoveOrFill(dirStack.top(2))) {
+                    dirStack.pop(2);
+                }
+                while (dirStack.size > 0 && canMoveOrFill(dirStack.top())) {
+                    dirStack.pop();
+                }
+                if (dirStack.size == 0) {
+                    Direction dir = rc.getLocation().directionTo(target);
+                    if (!canMoveOrFill(dir)) {
+                        dirStack.push(dir);
+                    }
+                    else {
+                        return dir;
+                    }
+                }
+                // keep rotating and adding things to the stack
+                Direction curDir;
+                int stackSizeLimit = Math.min(DirectionStack.STACK_SIZE, dirStack.size + 8);
+                while (dirStack.size > 0 && !canMoveOrFill(curDir = turn(dirStack.top()))) {
+                    if (!rc.onTheMap(rc.getLocation().add(curDir))) {
+                        currentTurnDir ^= 1;
+                        dirStack.clear();
+                        return null; // do not move
+                    }
+                    dirStack.push(curDir);
+                    if (dirStack.size == stackSizeLimit) {
+                        dirStack.clear();
+                        return null;
+                    }
+                }
+                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
+                if (canMoveOrFill(moveDir)) {
+                    return moveDir;
+                }
+            }
             return null;
+        }
+
+        static int simulate(int turnDir, Direction dir) throws GameActionException {
+            MapLocation now = rc.getLocation();
+            DirectionStack dirStack = new DirectionStack();
+            while (!canPass(now.add(dir), dir) && dirStack.size < 8) {
+                dirStack.push(dir);
+                dir = turn(dir, turnDir);
+            }
+            now = now.add(dir);
+
+            if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
+                return -1;
+            }
+
+            int ans = 0;
+            while (dirStack.size > 0) {
+                ans++;
+                if (ans > MAX_DEPTH) {
+                    break;
+                }
+                if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
+                    return -1;
+                }
+                while (dirStack.size > 0 && canPass(now.add(dirStack.top()), dirStack.top())) {
+                    dirStack.pop();
+                }
+                // is reference code correct?
+                if (dirStack.size > 1 && canPass(now.add(dirStack.top()), dirStack.top(2))) {
+                    dirStack.pop(2);
+                }
+
+                Direction curDir;
+                while (dirStack.size > 0 && !canPass(now.add(curDir = turn(dirStack.top(), turnDir)), curDir)) {
+                    dirStack.push(curDir);
+                    if (dirStack.size > 8) {
+                        return -1;
+                    }
+                }
+                if (dirStack.size > 8 || dirStack.size == 0) {
+                    break;
+                }
+                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
+                now = now.add(moveDir);
+            }
+            return ans + Util.distance(now, target);
+        }
+
+        static int getTurnDir(Direction dir) throws GameActionException {
+            int ansL = simulate(0, dir);
+            int ansR = simulate(1, dir);
+            if (ansL == -1 || ansR == -1) return FastMath.rand256() % 2;
+            if (ansL <= ansR) {
+                return 0;
+            }
+            else {
+                return 1;
+            }
         }
 
         // clear some of the previous data
         static void resetPathfinding() {
-            // Debug.println("Resetting pathfinding", id);
-            lastObstacleFound = null;
-            minDistToEnemy = INF;
-            visited.clear();
-            shouldGuessRotation = true;
-            hasRotatedAvoidingCurrent = false;
+            dirStack.clear();
         }
 
-        static int getCode() {
-            int x = rc.getLocation().x;
-            int y = rc.getLocation().y;
-            Direction obstacleDir = rc.getLocation().directionTo(target);
-            if (lastObstacleFound != null)
-                obstacleDir = rc.getLocation().directionTo(lastObstacleFound);
-            int bit = rotateRight ? 1 : 0;
-            return (((((x << 6) | y) << 4) | obstacleDir.ordinal()) << 1) | bit;
+        static boolean canMoveOrFill(Direction dir) throws GameActionException {
+            if (rc.canMove(dir))
+                return true;
+            if (rc.canFill(rc.getLocation().add(dir)))
+                return true;
+            return false;
         }
+
+        static boolean canPass(MapLocation loc, Direction targetDir) throws GameActionException {
+            MapLocation newLoc = loc.add(targetDir);
+            if (!rc.onTheMap(newLoc))
+                return false;
+            if (rc.getLocation().isWithinDistanceSquared(newLoc, GameConstants.VISION_RADIUS_SQUARED)) {
+                return rc.senseMapInfo(newLoc).isWall();
+            } else {
+                return MapRecorder.getPassible(loc.add(targetDir));
+            }
+        }
+    }
+}
+
+class DirectionStack {
+    static int STACK_SIZE = 60;
+    int size = 0;
+    Direction[] dirs = new Direction[STACK_SIZE];
+
+    final void clear() {
+        size = 0;
+    }
+
+    final void push(Direction d) {
+        dirs[size++] = d;
+    }
+
+    final Direction top() {
+        return dirs[size - 1];
+    }
+
+    /**
+     * Returns the top n element of the stack
+     * @param n
+     * @return
+     */
+    final Direction top(int n) {
+        return dirs[size - n];
+    }
+
+    final void pop() {
+        size--;
+    }
+
+    final void pop(int n) {
+        size -= n;
     }
 }
