@@ -207,7 +207,7 @@ public class PathFinder extends Robot {
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
             Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
-            if (ansL == -1 || ansR == -1) return FastMath.rand256() % 2;
+            if (ansL == -1 || ansR == -1 || ansL == ansR) return FastMath.rand256() % 2;
             if (ansL <= ansR) {
                 return 0;
             }
