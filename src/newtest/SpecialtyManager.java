@@ -1,4 +1,4 @@
-package bot1;
+package newtest;
 
 import battlecode.common.*;
 
@@ -26,12 +26,6 @@ public class SpecialtyManager extends RobotPlayer {
         int seq = duckID2seq[r.getID() % 4096];
         return seq > Constants.NUM_BUILDER
                 && seq <= Constants.NUM_BUILDER + Constants.NUM_HEALER;
-    }
-
-    public static boolean canHeal() {
-        if (rc.getExperience(SkillType.HEAL) == 74 && attackLevel <= 3 && (!isBuilder() && !isHealer()))
-            return false;
-        return true;
     }
 
     public static boolean act() throws GameActionException {

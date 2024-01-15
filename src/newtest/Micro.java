@@ -1,14 +1,13 @@
-package bot1;
+package newtest;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import newtest.fast.*;
 
 import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
 public class Micro extends Robot {
     private static MicroDirection bestMicro;
-    private static boolean playSafe = false;
 
     static boolean act() throws GameActionException {
         // assumptions
@@ -20,21 +19,11 @@ public class Micro extends Robot {
             return false;
         }
 
-        playSafe = false;
         if (Cache.nearbyEnemies.length == 0) {
+            // currently healing isn't too profitable, dying is faster regain of health, do not go out of way to heal
             tryHeal();
-            if (rc.isActionReady() && Cache.allyToHeal && SpecialtyManager.isHealer()) {
-                playSafe = true;
-                bestMicro = getBestMicro();
-                tryMove(bestMicro.dir);
-                tryHeal();
-            }
             return false;
         } else {
-            if (getDisToMyClosestSpawnCenter(rc.getLocation()) > 200 && rc.getHealth() <= 750)
-                playSafe = true;
-            if ((SpecialtyManager.healLevel > 2 || SpecialtyManager.attackLevel > 0) && rc.getHealth() <= 750)
-                playSafe = true;
             tryAttack();
             bestMicro = getBestMicro();
             if (bestMicro.canAttack == 0 && SpecialtyManager.isBuilder())
@@ -42,7 +31,7 @@ public class Micro extends Robot {
             tryMove(bestMicro.dir);
             Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
             tryAttack();
-            if (bestMicro.numAttackRangeNext == 0 || (bestMicro.allyCloseCnt > 0 && SpecialtyManager.isHealer())) {
+            if (bestMicro.numAttackRangeNext == 0 || SpecialtyManager.isHealer()) {
                 tryHeal();
             }
             return true;
@@ -124,8 +113,6 @@ public class Micro extends Robot {
 
     private static void tryHeal() throws GameActionException {
         if (!rc.isActionReady())
-            return;
-        if (!SpecialtyManager.canHeal())
             return;
         RobotInfo healingTarget = null;
         double bestScore = -Double.MAX_VALUE;
@@ -304,7 +291,8 @@ public class Micro extends Robot {
             int dis = loc.distanceSquaredTo(ally.location);
             if (dis <= 13)
                 allyWithinBlastRange++;
-            if (rc.getHealth() < 800 || ally.getHealth() < 800) {
+            if ((SpecialtyManager.isHealer(ally) && !SpecialtyManager.isHealer() && rc.getHealth() < 800)
+                ||(!SpecialtyManager.isHealer(ally) && SpecialtyManager.isHealer() && ally.getHealth() < 1000 - healHP)) {
                 if (dis <= GameConstants.HEAL_RADIUS_SQUARED) {
                     canHeal = 1;
                 }
@@ -320,7 +308,7 @@ public class Micro extends Robot {
         }
 
         boolean isBetterThan(MicroDirection other) {
-            if (bot1.SpecialtyManager.isBuilder()) {
+            if (newtest.SpecialtyManager.isBuilder()) {
                 // play safe as builder
                 if (canMove != other.canMove) return canMove > other.canMove;
                 if (numAttackRange - canKill != other.numAttackRange - other.canKill)
@@ -337,14 +325,11 @@ public class Micro extends Robot {
                 if (minDistanceToAlly != other.minDistanceToAlly)
                     return minDistanceToAlly < other.minDistanceToAlly;
                 return minDistanceToEnemy <= other.minDistanceToEnemy;
-            } else if (playSafe) {
+            } else if (SpecialtyManager.isHealer() || (rc.getHealth() < 500 && SpecialtyManager.attackLevel > 0)) {
                 // healing oriented
                 if (canMove != other.canMove) return canMove > other.canMove;
                 if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                     return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
-                if (numAttackRangeNext - canKill != other.numAttackRangeNext - other.canKill) {
-                    return numAttackRangeNext - canKill < other.numAttackRangeNext - other.canKill;
-                }
                 if (canAttack != other.canAttack)
                     return canAttack > other.canAttack;
                 if (canKill != other.canKill)
@@ -373,11 +358,6 @@ public class Micro extends Robot {
                         }
                     } else if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
-                    }
-                    if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
-                        if (canHeal != other.canHeal)
-                            return canHeal > other.canHeal;
-                        return disToHealer <= other.disToHealer;
                     }
 
                     if (allyWithinBlastRange != other.allyWithinBlastRange)

@@ -1,9 +1,9 @@
-package bot1;
+package newtest;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
-import bot1.fast.FastMath;
+import newtest.fast.FastMath;
 
 import java.util.Map;
 
@@ -117,7 +117,7 @@ public class RoleAssigner extends RobotPlayer {
                 MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(newRole));
                 // for not distressed friendly flag, one and only one duck sits on it
                 // builder never sits on flag
-                if (!SpecialtyManager.isHealer()) {
+                if (SpecialtyManager.isBuilder() || SpecialtyManager.isHealer()) {
                     return -1;
                 } else if (rc.isSpawned() && !rc.getLocation().isWithinDistanceSquared(flagLoc, 20) && rc.getRoundNum() > 200) {
                     return -1;

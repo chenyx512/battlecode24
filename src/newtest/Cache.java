@@ -1,11 +1,10 @@
-package bot1;
+package newtest;
 
 import battlecode.common.*;
 
 public class Cache extends RobotPlayer {
     public static RobotInfo[] nearbyEnemies, nearbyFriends;
     public static MapLocation closestEnemy;
-    public static boolean allyToHeal;
 
     public static void initTurn() throws GameActionException {
         if (!rc.isSpawned())
@@ -20,12 +19,6 @@ public class Cache extends RobotPlayer {
             if (dis < minDis) {
                 minDis = dis;
                 closestEnemy = nearbyEnemies[i].getLocation();
-            }
-        }
-        allyToHeal = false;
-        for (int i = nearbyFriends.length; --i >= 0;) {
-            if (nearbyFriends[i].getHealth() <= 900) {
-                allyToHeal = true;
             }
         }
     }
