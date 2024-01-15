@@ -13,7 +13,11 @@ public class MapRecorder extends RobotPlayer {
     private static int symmetry;
 
     public static boolean getPassible(MapLocation loc) {
-        return (vals[Util.loc2int(loc)] & WALL_BIT) > 0;
+        int val = vals[Util.loc2int(loc)];
+        if ((val & SEEN_BIT) > 0)
+            return (val & WALL_BIT) == 0;
+        val = vals[Util.loc2int(getSymmetricLoc(loc))];
+        return (val & WALL_BIT) == 0;
     }
 
     public static int getData(MapLocation loc) {

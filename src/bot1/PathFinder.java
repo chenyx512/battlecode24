@@ -60,7 +60,7 @@ public class PathFinder extends Robot {
         Direction dir = BugNav.getMoveDir();
         if (dir == null)
             return;
-        Debug.printString(Debug.PATHFINDING, String.format("move%sdir%s", loc.toString(), Util.toString(dir)));
+        Debug.printString(Debug.PATHFINDING, String.format("move%s", loc.toString()));
         tryMove(dir);
     }
 
@@ -82,8 +82,6 @@ public class PathFinder extends Robot {
         static Direction getMoveDir() throws GameActionException {
             // different target? ==> previous data does not help!
             if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
-                // Debug.println("New target: " + target, id);
-                Debug.println(Debug.PATHFINDING, "New target");
                 resetPathfinding();
             }
             prevTarget = target;
@@ -111,10 +109,7 @@ public class PathFinder extends Robot {
                     dirStack.push(dir);
                     dir = turn(dir);
                 }
-                if (dirStack.size == 8) {
-                    Debug.println(Debug.PATHFINDING, "blocked");
-                }
-                else {
+                if (dirStack.size != 8) {
                     return dir;
                 }
             }
@@ -164,38 +159,35 @@ public class PathFinder extends Robot {
         }
 
         static int simulate(int turnDir, Direction dir) throws GameActionException {
+            if (rc.getID() == 13149 && rc.getRoundNum() > 460) {
+                int x = 0;
+            }
             MapLocation now = rc.getLocation();
             DirectionStack dirStack = new DirectionStack();
-            while (!canPass(now.add(dir), dir) && dirStack.size < 8) {
+            while (!canPass(now, dir) && dirStack.size < 8) {
                 dirStack.push(dir);
                 dir = turn(dir, turnDir);
             }
             now = now.add(dir);
+            int ans = 1;
 
-            if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
-                return -1;
-            }
-
-            int ans = 0;
             while (dirStack.size > 0) {
-                ans++;
                 if (ans > MAX_DEPTH) {
                     break;
                 }
                 if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
                     return -1;
                 }
-                while (dirStack.size > 0 && canPass(now.add(dirStack.top()), dirStack.top())) {
+                while (dirStack.size > 0 && canPass(now, dirStack.top())) {
                     dirStack.pop();
                 }
                 // is reference code correct?
-                if (dirStack.size > 1 && canPass(now.add(dirStack.top()), dirStack.top(2))) {
-                    dirStack.pop(2);
-                }
+//                if (dirStack.size > 1 && canPass(now.add(dirStack.top()), dirStack.top(2))) {
+//                    dirStack.pop(2);
+//                }
 
-                Direction curDir;
-                while (dirStack.size > 0 && !canPass(now.add(curDir = turn(dirStack.top(), turnDir)), curDir)) {
-                    dirStack.push(curDir);
+                while (dirStack.size > 0 && !canPass(now, turn(dirStack.top(), turnDir))) {
+                    dirStack.push(turn(dirStack.top(), turnDir));
                     if (dirStack.size > 8) {
                         return -1;
                     }
@@ -203,15 +195,18 @@ public class PathFinder extends Robot {
                 if (dirStack.size > 8 || dirStack.size == 0) {
                     break;
                 }
-                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
+                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top(), turnDir);
                 now = now.add(moveDir);
+                ans++;
             }
+            Debug.setIndicatorDot(Debug.PATHFINDING, now, 255, 0, 0);
             return ans + Util.distance(now, target);
         }
 
         static int getTurnDir(Direction dir) throws GameActionException {
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
+            Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
             if (ansL == -1 || ansR == -1) return FastMath.rand256() % 2;
             if (ansL <= ansR) {
                 return 0;
@@ -229,7 +224,10 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             if (rc.canMove(dir))
                 return true;
-            if (rc.canFill(rc.getLocation().add(dir)))
+            MapLocation loc = rc.getLocation().add(dir);
+            if (rc.canFill(loc) && rc.getCrumbs() > 30) // micro filling has priority
+                return true;
+            if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isDam())
                 return true;
             return false;
         }
@@ -239,9 +237,9 @@ public class PathFinder extends Robot {
             if (!rc.onTheMap(newLoc))
                 return false;
             if (rc.getLocation().isWithinDistanceSquared(newLoc, GameConstants.VISION_RADIUS_SQUARED)) {
-                return rc.senseMapInfo(newLoc).isWall();
+                return !rc.senseMapInfo(newLoc).isWall();
             } else {
-                return MapRecorder.getPassible(loc.add(targetDir));
+                return MapRecorder.getPassible(newLoc);
             }
         }
     }
