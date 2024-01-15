@@ -35,8 +35,12 @@ public class SpecialtyManager extends RobotPlayer {
     }
 
     public static boolean act() throws GameActionException {
-        if (rc.getRoundNum() > GameConstants.SETUP_ROUNDS || !isBuilder())
-            return false;
+        if (!isBuilder()) {
+            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
+                return false;
+            if (buildLevel >= 3)
+                return false;
+        }
         if (buildLevel == 6)
             return false;
         if (!rc.isActionReady())

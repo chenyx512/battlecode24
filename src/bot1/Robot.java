@@ -19,10 +19,10 @@ public class Robot extends RobotPlayer {
     static void initTurn() throws GameActionException {
         Comms.pull();
         MapRecorder.updateSym();
-        RoleAssigner.initTurn(); // takes care of spawning
-        FlagManager.initTurn();
+        RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache
         Cache.initTurn();
-        SpecialtyManager.initTurn();
+        FlagManager.initTurn();
+        SpecialtyManager.initTurn(); // relies on cache
 
         // updates self stats
         attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
