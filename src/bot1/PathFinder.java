@@ -28,22 +28,28 @@ public class PathFinder extends RobotPlayer{
         }
     }
 
-    static public void escort(MapLocation loc) throws GameActionException {
+    static public void escort(int flagid) throws GameActionException {
         /* To stay 1 tile away from the escorted duck to prevent congestion */
-        Debug.printString(Debug.PATHFINDING, String.format("escort%s", loc.toString()));
+        Debug.printString(Debug.PATHFINDING, String.format("escort%d", flagid));
+        MapLocation carrierLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
+        MapLocation escortLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
         if (!rc.isMovementReady())
             return;
         // if I am right next to the escorted, move away to make room
-        if (rc.getLocation().isAdjacentTo(loc)) {
-            tryMoveDir(rc.getLocation().directionTo(loc).opposite());
+        // otherwize, try path to a direction behind the escorted, unless I am gonna be adjacent, then I stop
+        if (rc.getLocation().isAdjacentTo(carrierLoc)) {
+            tryMoveDir(rc.getLocation().directionTo(carrierLoc).opposite());
             return;
         }
-        // otherwize, try path to a direction behind the escorted, unless I am gonna be adjacent, then I stop
-        MapLocation closestHome = Util.getClosestLoc(loc, Robot.mySpawnCenters);
-        Direction protectDir = loc.directionTo(closestHome).opposite();
-        target = loc.add(protectDir).add(protectDir);
+        if (escortLoc != null) {
+            target = escortLoc;
+        } else {
+            MapLocation closestHome = Util.getClosestLoc(carrierLoc, Robot.mySpawnCenters);
+            Direction protectDir = carrierLoc.directionTo(closestHome).opposite();
+            target = carrierLoc.add(protectDir).add(protectDir);
+        }
         Direction dir = BugNav.getMoveDir();
-        if (dir != null && !rc.getLocation().add(dir).isAdjacentTo(loc))
+        if (dir != null && !rc.getLocation().add(dir).isAdjacentTo(carrierLoc))
             rc.move(dir);
     }
 

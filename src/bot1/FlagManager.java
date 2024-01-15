@@ -110,6 +110,11 @@ public class FlagManager extends RobotPlayer {
                 carriedEnemyFlagIndex = -1;
                 return false;
             }
+            if (Cache.closestEnemy != null) {
+                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(Cache.closestEnemy));
+            } else {
+                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
+            }
             return true;
         } else {
             // invalidate false reports of our flag due to flags returning
