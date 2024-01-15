@@ -1,54 +1,141 @@
 package pathing_test;
 
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import pathing_test.fast.FastMath;
+import battlecode.common.*;
 
-public class Robot {
-    static RobotController rc;
-    static int H, W;
+public class Robot extends RobotPlayer {
+    public static MapLocation[] mySpawnCenters = new MapLocation[3];
+    public static MapLocation[] oppSpawnCenters = new MapLocation[3];
 
-    static MapLocation targetLoc = null;
-    static int targetRound = -1;
+    public static MapLocation homeSpawn;
 
-    Robot (RobotController rc) throws GameActionException {
-        this.rc = rc; //this should always go first
-        H = rc.getMapHeight();
-        W = rc.getMapWidth();
+    public static int baseHeal = SkillType.HEAL.skillEffect;
+    public static int attackHP, healHP;
+    public static boolean isMaster = false;
+
+    static void init() throws GameActionException {
+        initHQLocs(); // also the flag manager
     }
 
-    void initTurn() throws GameActionException {
-        Comms.initTurns();
+    static void initTurn() throws GameActionException {
+        Comms.pull();
+        MapRecorder.updateSym();
+        if (!rc.isSpawned() && isMaster)
+            rc.spawn(rc.getAllySpawnLocations()[0]);
+    }
+
+    static void play() throws GameActionException {
         if (!rc.isSpawned()) {
-            if(Comms.readDucksAlive(0) == 0) {
-                for (MapLocation loc : rc.getAllySpawnLocations()) {
-                    if (rc.canSpawn(loc)) {
-                        rc.spawn(loc);
-                        Comms.writeDucksAlive(0, 1);
-                        break;
+            return;
+        }
+        if (findCrumb())
+            return;
+        PathFinder.move(Explorer.getAnyExploreTarget(20));
+    }
+
+    static void endTurn() throws GameActionException {
+        Comms.push();
+        if (rc.isSpawned()) {
+            MapRecorder.recordSym(2000);
+        }
+    }
+
+    static boolean findCrumb() throws GameActionException {
+        MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
+        if (crumbs.length > 0) {
+            PathFinder.move(Util.getClosestLoc(crumbs));
+            return true;
+        }
+        return false;
+    }
+
+    static void initHQLocs() throws GameActionException {
+        Comms.pull();
+        if (Comms.readHqLoc(0) == 0) {
+            MapLocation[] locations = rc.getAllySpawnLocations();
+            boolean[] used = new boolean[27];
+            for (int i = 3; --i >= 0; ) {
+                int sumX = 0, sumY = 0, count = 0;
+                for (int j = 27; --j >= 0; ) {
+                    if (!used[j]) {
+                        if (count == 0) {
+                            // Select a starting location for a new group
+                            sumX += locations[j].x;
+                            sumY += locations[j].y;
+                            count++;
+                            used[j] = true;
+                        } else {
+                            // Check if the location is close to the starting location
+                            int dx = locations[j].x - sumX / count;
+                            int dy = locations[j].y - sumY / count;
+                            if (dx * dx + dy * dy <= 8) {
+                                sumX += locations[j].x;
+                                sumY += locations[j].y;
+                                count++;
+                                used[j] = true;
+                            }
+                        }
                     }
                 }
-            } else {
-                return;
+                assert count == 9;
+
+                mySpawnCenters[i] = new MapLocation(sumX / 9, sumY / 9);
+                Comms.writeHqLoc(i, Util.loc2int(mySpawnCenters[i]));
+                Debug.println(Debug.INFO, String.format("HQ %d: %d %d", i, sumX / 9, sumY / 9));
+                isMaster = true;
+            }
+            Comms.push();
+        } else {
+            for (int i = 3; --i >= 0; ) {
+                mySpawnCenters[i] = Util.int2loc(Comms.readHqLoc(i));
             }
         }
+        oppSpawnCenters[0] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[0]);
+        oppSpawnCenters[1] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[1]);
+        oppSpawnCenters[2] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[2]);
     }
 
-    void play() throws GameActionException {
-        if (!rc.isSpawned() || rc.getRoundNum() < 200)
+    public static int getDisToMyClosestSpawnCenter(MapLocation loc) {
+        int dis0 = mySpawnCenters[0].distanceSquaredTo(loc);
+        int dis1 = mySpawnCenters[1].distanceSquaredTo(loc);
+        int dis2 = mySpawnCenters[2].distanceSquaredTo(loc);
+        return Math.min(Math.min(dis0, dis1), dis2);
+    }
+
+    public static void tryMove(Direction dir) throws GameActionException {
+        if (dir == Direction.CENTER)
             return;
-
-        if (targetLoc == null || rc.getRoundNum() - targetRound > 100 || rc.getLocation().distanceSquaredTo(targetLoc) <= 9) {
-            targetLoc = new MapLocation(FastMath.rand256() % W, FastMath.rand256() % H);
-            targetRound = rc.getRoundNum();
-        }
-        Debug.setIndicatorDot(Debug.INFO, targetLoc, 255, 0, 0);
-        Debug.printString(Debug.INFO, String.format("%d %d", targetLoc.x, targetLoc.y));
-        PathFinder.move(targetLoc);
-    }
-
-    void endTurn() throws GameActionException {
-        Comms.endsTurns();
+        rc.move(dir);
     }
 }
+// code remnants for spawn camping, not working because defense is too strong
+//            Debug.printString(Debug.INFO, String.format("attk%d", attackID));
+//            if (rc.senseMapInfo(rc.getLocation()).getSpawnZoneTeam() == oppTeamID) {
+//                // I am camping spawn, if it is full ask other to attack elsewhere
+//                isCamping = true;
+//                if (attackID == Comms.readAttacktargetTarget()
+//                        && rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 8) {
+//                    Debug.println(Debug.INFO, String.format("base %d camped, moving on", attackID));
+//                    Comms.writeAttacktargetTarget((attackID + 1) % GameConstants.NUMBER_FLAGS);
+//                }
+//                    for (Direction dir : Constants.directions) {
+//                        // move around to let others in if possible
+//                        MapLocation newLoc = rc.getLocation().add(dir);
+//                        if (rc.senseMapInfo(newLoc).getSpawnZoneTeam() == oppTeamID && rc.canMove(dir)) {
+//                            rc.move(dir);
+//                        }
+//                        // build traps around enemy spawn with enough resource and some rng (to distribute around camps)
+//                        if (rc.canBuild(TrapType.EXPLOSIVE, newLoc)) {
+//                            if (rc.getCrumbs() > Constants.CRUMBS_MIN_FOR_CAMPING && FastMath.rand256() % 32 == 0) {
+//                                rc.build(TrapType.EXPLOSIVE, newLoc);
+//                            }
+//                        }
+//                    }
+//                return;
+//            } else if (rc.senseNearbyRobots(oppSpawnCenters[attackID], 2, myTeam).length == 9) {
+//                // the HQ I was camping is already camped, move to a new HQ to camp
+//                isCamping = false;
+//            }
+//            if (!isCamping) {
+//                attackID = Comms.readAttacktargetTarget();
+//            }
+//            targetLoc = oppSpawnCenters[attackID];

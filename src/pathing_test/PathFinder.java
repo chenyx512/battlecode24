@@ -4,6 +4,9 @@ import battlecode.common.*;
 import pathing_test.fast.FastIntSet;
 import pathing_test.fast.FastMath;
 
+// TODO dion add water removal (search rc.fill in bot1.pathfinder)
+// TODO dion make sure never go over timelimit in simulate
+// TODO dion make sure it is compatible with bot1 by adding escort and test it in bot1
 class DirectionStack {
     static int STACK_SIZE = 60;
     int size = 0;
@@ -39,8 +42,7 @@ class DirectionStack {
     }
 }
 
-public class PathFinder {
-    private static RobotController rc;
+public class PathFinder extends RobotPlayer {
     private static MapLocation target = null;
 
     public static void init(RobotController r) {
@@ -50,6 +52,7 @@ public class PathFinder {
     public static void move(MapLocation loc) {
         if (!rc.isMovementReady())
             return;
+        Debug.setIndicatorDot(Debug.PATHFINDING, target, 255, 0, 0);
         target = loc;
         BugNav.move();
     }
@@ -73,7 +76,7 @@ public class PathFinder {
                 // different target? ==> previous data does not help!
                 if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
                     // Debug.println("New target: " + target, id);
-                    Debug.println("New target");
+                    Debug.println(Debug.PATHFINDING, "New target");
                     resetPathfinding();
                 }
                 prevTarget = target;
@@ -106,7 +109,7 @@ public class PathFinder {
                         dir = turn(dir);
                     }
                     if (dirStack.size == 8) {
-                        Debug.println("blocked");
+                        Debug.println(Debug.PATHFINDING, "blocked");
                     }
                     else {
                         rc.move(dir);
@@ -114,6 +117,11 @@ public class PathFinder {
                 }
                 else {
                     // TODO: don't understand this (why pop 2?)
+                    // dxx
+                    // xo
+                    // x
+                    // suppose you are at o, x is wall, and d is another duck, you are pathing left and bugging up rn
+                    // and the duck moves away, you wanna take its spot
                     if (dirStack.size > 1 && rc.canMove(dirStack.top(2))) {
                         dirStack.pop(2);
                     }
@@ -211,13 +219,15 @@ public class PathFinder {
             dirStack.clear();
         }
 
-        // TODO: YUXUAN
         static boolean canPass(MapLocation loc, Direction targetDir) throws GameActionException {
-            if (loc.equals(rc.getLocation())) return true;
-            // TODO: YUXUAN IMPL MAPRECORDR CHECK
-            if (!MapRecorder.check(loc.add(targetDir))) return false;
-            // TODO: YUXUAN CHECK IF SQRT 20
-            return rc.sensePassability(loc.add(targetDir));
+            MapLocation newLoc = loc.add(targetDir);
+            if (!rc.onTheMap(newLoc))
+                return false;
+            if (rc.getLocation().isWithinDistanceSquared(newLoc, GameConstants.VISION_RADIUS_SQUARED)) {
+                return rc.senseMapInfo(newLoc).isWall();
+            } else {
+                return MapRecorder.getPassible(loc.add(targetDir));
+            }
         }
     }
 }

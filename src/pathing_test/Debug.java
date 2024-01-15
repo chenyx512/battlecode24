@@ -1,23 +1,21 @@
 // shamelessly copied from 4 musketeer https://github.com/maxwelljones14/BattleCode2023/blob/main/src/MPWorking/Debug.java
 package pathing_test;
 
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
-public class Debug {
+public class Debug extends RobotPlayer {
     static final boolean VERBOSE = true;
     public static final boolean INFO = true;
+    public static final boolean SPECIALTY = true;
     public static final boolean PATHFINDING = true;
     public static final boolean INDICATORS = true;
+    public static final boolean ASSIGNMENT = true;
 
     public static String bytecodeDebug = new String();
 
-    private static RobotController rc;
-
     private static StringBuilder sb;
 
-    static void init(RobotController r) {
-        rc = r;
+    static void init() {
         sb = new StringBuilder();
     }
 
@@ -35,6 +33,24 @@ public class Debug {
 
     public static void printString(String s) {
         Debug.printString(Debug.INFO, s);
+    }
+
+    public static void failFast(GameActionException ex) {
+        if (Constants.DEBUG_FAIL_FAST) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    public static void failFast(String message) {
+        if (Constants.DEBUG_FAIL_FAST) {
+            throw new IllegalStateException(message);
+        }
+    }
+
+    public static void betterAssert(boolean cond, String msg) {
+        if (!cond) {
+            failFast(msg);
+        }
     }
 
     public static void println(boolean cond, String s) {

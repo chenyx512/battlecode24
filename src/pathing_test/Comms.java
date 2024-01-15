@@ -2,24 +2,19 @@
 DO NOT MODIFY THIS FILE DIRECTLY */
 package pathing_test;
 
-import battlecode.common.GameActionException;
-import battlecode.common.GameActionExceptionType;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
-public class Comms {
-    private static RobotController rc;
-
+public class Comms extends RobotPlayer {
     private static int buf0,buf1,buf2,buf3,buf4,buf5,buf6,buf7,buf8,buf9,buf10,buf11,buf12,buf13,buf14,buf15,buf16,buf17,buf18,buf19,buf20,buf21,buf22,buf23,buf24,buf25,buf26,buf27,buf28,buf29,buf30,buf31,buf32,buf33,buf34,buf35,buf36,buf37,buf38,buf39,buf40,buf41,buf42,buf43,buf44,buf45,buf46,buf47,buf48,buf49,buf50,buf51,buf52,buf53,buf54,buf55,buf56,buf57,buf58,buf59,buf60,buf61,buf62,buf63;
     private static int dirty0,dirty1,dirty2,dirty3,dirty4,dirty5,dirty6,dirty7,dirty8,dirty9,dirty10,dirty11,dirty12,dirty13,dirty14,dirty15,dirty16,dirty17,dirty18,dirty19,dirty20,dirty21,dirty22,dirty23,dirty24,dirty25,dirty26,dirty27,dirty28,dirty29,dirty30,dirty31,dirty32,dirty33,dirty34,dirty35,dirty36,dirty37,dirty38,dirty39,dirty40,dirty41,dirty42,dirty43,dirty44,dirty45,dirty46,dirty47,dirty48,dirty49,dirty50,dirty51,dirty52,dirty53,dirty54,dirty55,dirty56,dirty57,dirty58,dirty59,dirty60,dirty61,dirty62,dirty63;
 
-    public final static int DUCKS_SLOTS = 50;
+    public final static int SYNC_SLOTS = 1;
+    public final static int HQ_SLOTS = 3;
     public final static int SYMMETRY_SLOTS = 1;
+    public final static int MYFLAGS_SLOTS = 3;
+    public final static int OPPFLAGS_SLOTS = 3;
 
-    public static void init(RobotController r) {
-        rc = r;
-    }
-
-    public static void initTurns() throws GameActionException {
+    public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
         buf1 = rc.readSharedArray(1);
         buf2 = rc.readSharedArray(2);
@@ -86,7 +81,7 @@ public class Comms {
         buf63 = rc.readSharedArray(63);
     }
 
-    public static void endsTurns() throws GameActionException {
+    public static void push() throws GameActionException {
         switch (dirty0) {case 1: rc.writeSharedArray(0, buf0); dirty0 = 0;}
         switch (dirty1) {case 1: rc.writeSharedArray(1, buf1); dirty1 = 0;}
         switch (dirty2) {case 1: rc.writeSharedArray(2, buf2); dirty2 = 0;}
@@ -154,568 +149,456 @@ public class Comms {
     }
 
 
-    public static int readDucksAlive(int idx) throws GameActionException {
+    public static int readSyncId() throws GameActionException {
+        return (buf0 & 65520) >>> 4;
+    }
+
+    public static void writeSyncId(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        buf0 = (buf0 & 15) | (value << 4);
+        dirty0 = 1;
+    }
+
+    public static int readHqLoc(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf0 & 32768) >>> 15;
-            case 1: return (buf0 & 16384) >>> 14;
-            case 2: return (buf0 & 8192) >>> 13;
-            case 3: return (buf0 & 4096) >>> 12;
-            case 4: return (buf0 & 2048) >>> 11;
-            case 5: return (buf0 & 1024) >>> 10;
-            case 6: return (buf0 & 512) >>> 9;
-            case 7: return (buf0 & 256) >>> 8;
-            case 8: return (buf0 & 128) >>> 7;
-            case 9: return (buf0 & 64) >>> 6;
-            case 10: return (buf0 & 32) >>> 5;
-            case 11: return (buf0 & 16) >>> 4;
-            case 12: return (buf0 & 8) >>> 3;
-            case 13: return (buf0 & 4) >>> 2;
-            case 14: return (buf0 & 2) >>> 1;
-            case 15: return (buf0 & 1);
-            case 16: return (buf1 & 32768) >>> 15;
-            case 17: return (buf1 & 16384) >>> 14;
-            case 18: return (buf1 & 8192) >>> 13;
-            case 19: return (buf1 & 4096) >>> 12;
-            case 20: return (buf1 & 2048) >>> 11;
-            case 21: return (buf1 & 1024) >>> 10;
-            case 22: return (buf1 & 512) >>> 9;
-            case 23: return (buf1 & 256) >>> 8;
-            case 24: return (buf1 & 128) >>> 7;
-            case 25: return (buf1 & 64) >>> 6;
-            case 26: return (buf1 & 32) >>> 5;
-            case 27: return (buf1 & 16) >>> 4;
-            case 28: return (buf1 & 8) >>> 3;
-            case 29: return (buf1 & 4) >>> 2;
-            case 30: return (buf1 & 2) >>> 1;
-            case 31: return (buf1 & 1);
-            case 32: return (buf2 & 32768) >>> 15;
-            case 33: return (buf2 & 16384) >>> 14;
-            case 34: return (buf2 & 8192) >>> 13;
-            case 35: return (buf2 & 4096) >>> 12;
-            case 36: return (buf2 & 2048) >>> 11;
-            case 37: return (buf2 & 1024) >>> 10;
-            case 38: return (buf2 & 512) >>> 9;
-            case 39: return (buf2 & 256) >>> 8;
-            case 40: return (buf2 & 128) >>> 7;
-            case 41: return (buf2 & 64) >>> 6;
-            case 42: return (buf2 & 32) >>> 5;
-            case 43: return (buf2 & 16) >>> 4;
-            case 44: return (buf2 & 8) >>> 3;
-            case 45: return (buf2 & 4) >>> 2;
-            case 46: return (buf2 & 2) >>> 1;
-            case 47: return (buf2 & 1);
-            case 48: return (buf3 & 32768) >>> 15;
-            case 49: return (buf3 & 16384) >>> 14;
+            case 0: return ((buf0 & 15) << 8) + ((buf1 & 65280) >>> 8);
+            case 1: return ((buf1 & 255) << 4) + ((buf2 & 61440) >>> 12);
+            case 2: return (buf2 & 4095);
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm read param not in range");
+                Debug.failFast("Comm read param not in range"); return -1;
         }
     }
 
-    public static void writeDucksAlive(int idx, int value) throws GameActionException {assert value >= 0; assert value < 2;
+    public static void writeHqLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf0 = (buf0 & 32767) | (value << 15);
+                buf0 = (buf0 & 65520) | ((value & 3840) >>> 8);
                 dirty0 = 1;
+                buf1 = (buf1 & 255) | ((value & 255) << 8);
+                dirty1 = 1;
                 break;
             case 1:
-                buf0 = (buf0 & 49151) | (value << 14);
-                dirty0 = 1;
+                buf1 = (buf1 & 65280) | ((value & 4080) >>> 4);
+                dirty1 = 1;
+                buf2 = (buf2 & 4095) | ((value & 15) << 12);
+                dirty2 = 1;
                 break;
             case 2:
-                buf0 = (buf0 & 57343) | (value << 13);
-                dirty0 = 1;
-                break;
-            case 3:
-                buf0 = (buf0 & 61439) | (value << 12);
-                dirty0 = 1;
-                break;
-            case 4:
-                buf0 = (buf0 & 63487) | (value << 11);
-                dirty0 = 1;
-                break;
-            case 5:
-                buf0 = (buf0 & 64511) | (value << 10);
-                dirty0 = 1;
-                break;
-            case 6:
-                buf0 = (buf0 & 65023) | (value << 9);
-                dirty0 = 1;
-                break;
-            case 7:
-                buf0 = (buf0 & 65279) | (value << 8);
-                dirty0 = 1;
-                break;
-            case 8:
-                buf0 = (buf0 & 65407) | (value << 7);
-                dirty0 = 1;
-                break;
-            case 9:
-                buf0 = (buf0 & 65471) | (value << 6);
-                dirty0 = 1;
-                break;
-            case 10:
-                buf0 = (buf0 & 65503) | (value << 5);
-                dirty0 = 1;
-                break;
-            case 11:
-                buf0 = (buf0 & 65519) | (value << 4);
-                dirty0 = 1;
-                break;
-            case 12:
-                buf0 = (buf0 & 65527) | (value << 3);
-                dirty0 = 1;
-                break;
-            case 13:
-                buf0 = (buf0 & 65531) | (value << 2);
-                dirty0 = 1;
-                break;
-            case 14:
-                buf0 = (buf0 & 65533) | (value << 1);
-                dirty0 = 1;
-                break;
-            case 15:
-                buf0 = (buf0 & 65534) | (value);
-                dirty0 = 1;
-                break;
-            case 16:
-                buf1 = (buf1 & 32767) | (value << 15);
-                dirty1 = 1;
-                break;
-            case 17:
-                buf1 = (buf1 & 49151) | (value << 14);
-                dirty1 = 1;
-                break;
-            case 18:
-                buf1 = (buf1 & 57343) | (value << 13);
-                dirty1 = 1;
-                break;
-            case 19:
-                buf1 = (buf1 & 61439) | (value << 12);
-                dirty1 = 1;
-                break;
-            case 20:
-                buf1 = (buf1 & 63487) | (value << 11);
-                dirty1 = 1;
-                break;
-            case 21:
-                buf1 = (buf1 & 64511) | (value << 10);
-                dirty1 = 1;
-                break;
-            case 22:
-                buf1 = (buf1 & 65023) | (value << 9);
-                dirty1 = 1;
-                break;
-            case 23:
-                buf1 = (buf1 & 65279) | (value << 8);
-                dirty1 = 1;
-                break;
-            case 24:
-                buf1 = (buf1 & 65407) | (value << 7);
-                dirty1 = 1;
-                break;
-            case 25:
-                buf1 = (buf1 & 65471) | (value << 6);
-                dirty1 = 1;
-                break;
-            case 26:
-                buf1 = (buf1 & 65503) | (value << 5);
-                dirty1 = 1;
-                break;
-            case 27:
-                buf1 = (buf1 & 65519) | (value << 4);
-                dirty1 = 1;
-                break;
-            case 28:
-                buf1 = (buf1 & 65527) | (value << 3);
-                dirty1 = 1;
-                break;
-            case 29:
-                buf1 = (buf1 & 65531) | (value << 2);
-                dirty1 = 1;
-                break;
-            case 30:
-                buf1 = (buf1 & 65533) | (value << 1);
-                dirty1 = 1;
-                break;
-            case 31:
-                buf1 = (buf1 & 65534) | (value);
-                dirty1 = 1;
-                break;
-            case 32:
-                buf2 = (buf2 & 32767) | (value << 15);
+                buf2 = (buf2 & 61440) | (value);
                 dirty2 = 1;
-                break;
-            case 33:
-                buf2 = (buf2 & 49151) | (value << 14);
-                dirty2 = 1;
-                break;
-            case 34:
-                buf2 = (buf2 & 57343) | (value << 13);
-                dirty2 = 1;
-                break;
-            case 35:
-                buf2 = (buf2 & 61439) | (value << 12);
-                dirty2 = 1;
-                break;
-            case 36:
-                buf2 = (buf2 & 63487) | (value << 11);
-                dirty2 = 1;
-                break;
-            case 37:
-                buf2 = (buf2 & 64511) | (value << 10);
-                dirty2 = 1;
-                break;
-            case 38:
-                buf2 = (buf2 & 65023) | (value << 9);
-                dirty2 = 1;
-                break;
-            case 39:
-                buf2 = (buf2 & 65279) | (value << 8);
-                dirty2 = 1;
-                break;
-            case 40:
-                buf2 = (buf2 & 65407) | (value << 7);
-                dirty2 = 1;
-                break;
-            case 41:
-                buf2 = (buf2 & 65471) | (value << 6);
-                dirty2 = 1;
-                break;
-            case 42:
-                buf2 = (buf2 & 65503) | (value << 5);
-                dirty2 = 1;
-                break;
-            case 43:
-                buf2 = (buf2 & 65519) | (value << 4);
-                dirty2 = 1;
-                break;
-            case 44:
-                buf2 = (buf2 & 65527) | (value << 3);
-                dirty2 = 1;
-                break;
-            case 45:
-                buf2 = (buf2 & 65531) | (value << 2);
-                dirty2 = 1;
-                break;
-            case 46:
-                buf2 = (buf2 & 65533) | (value << 1);
-                dirty2 = 1;
-                break;
-            case 47:
-                buf2 = (buf2 & 65534) | (value);
-                dirty2 = 1;
-                break;
-            case 48:
-                buf3 = (buf3 & 32767) | (value << 15);
-                dirty3 = 1;
-                break;
-            case 49:
-                buf3 = (buf3 & 49151) | (value << 14);
-                dirty3 = 1;
                 break;
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm write param not in range");
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
-    public static int readDucksAll(int idx) throws GameActionException {
+    public static int readSymmetrySym() throws GameActionException {
+        return (buf3 & 57344) >>> 13;
+    }
+
+    public static void writeSymmetrySym(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 8, "write value out of range");
+        buf3 = (buf3 & 8191) | (value << 13);
+        dirty3 = 1;
+    }
+
+    public static int readMyflagsId(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf0 & 32768) >>> 15;
-            case 1: return (buf0 & 16384) >>> 14;
-            case 2: return (buf0 & 8192) >>> 13;
-            case 3: return (buf0 & 4096) >>> 12;
-            case 4: return (buf0 & 2048) >>> 11;
-            case 5: return (buf0 & 1024) >>> 10;
-            case 6: return (buf0 & 512) >>> 9;
-            case 7: return (buf0 & 256) >>> 8;
-            case 8: return (buf0 & 128) >>> 7;
-            case 9: return (buf0 & 64) >>> 6;
-            case 10: return (buf0 & 32) >>> 5;
-            case 11: return (buf0 & 16) >>> 4;
-            case 12: return (buf0 & 8) >>> 3;
-            case 13: return (buf0 & 4) >>> 2;
-            case 14: return (buf0 & 2) >>> 1;
-            case 15: return (buf0 & 1);
-            case 16: return (buf1 & 32768) >>> 15;
-            case 17: return (buf1 & 16384) >>> 14;
-            case 18: return (buf1 & 8192) >>> 13;
-            case 19: return (buf1 & 4096) >>> 12;
-            case 20: return (buf1 & 2048) >>> 11;
-            case 21: return (buf1 & 1024) >>> 10;
-            case 22: return (buf1 & 512) >>> 9;
-            case 23: return (buf1 & 256) >>> 8;
-            case 24: return (buf1 & 128) >>> 7;
-            case 25: return (buf1 & 64) >>> 6;
-            case 26: return (buf1 & 32) >>> 5;
-            case 27: return (buf1 & 16) >>> 4;
-            case 28: return (buf1 & 8) >>> 3;
-            case 29: return (buf1 & 4) >>> 2;
-            case 30: return (buf1 & 2) >>> 1;
-            case 31: return (buf1 & 1);
-            case 32: return (buf2 & 32768) >>> 15;
-            case 33: return (buf2 & 16384) >>> 14;
-            case 34: return (buf2 & 8192) >>> 13;
-            case 35: return (buf2 & 4096) >>> 12;
-            case 36: return (buf2 & 2048) >>> 11;
-            case 37: return (buf2 & 1024) >>> 10;
-            case 38: return (buf2 & 512) >>> 9;
-            case 39: return (buf2 & 256) >>> 8;
-            case 40: return (buf2 & 128) >>> 7;
-            case 41: return (buf2 & 64) >>> 6;
-            case 42: return (buf2 & 32) >>> 5;
-            case 43: return (buf2 & 16) >>> 4;
-            case 44: return (buf2 & 8) >>> 3;
-            case 45: return (buf2 & 4) >>> 2;
-            case 46: return (buf2 & 2) >>> 1;
-            case 47: return (buf2 & 1);
-            case 48: return (buf3 & 32768) >>> 15;
-            case 49: return (buf3 & 16384) >>> 14;
+            case 0: return (buf3 & 8190) >>> 1;
+            case 1: return ((buf5 & 1) << 11) + ((buf6 & 65504) >>> 5);
+            case 2: return ((buf8 & 31) << 7) + ((buf9 & 65024) >>> 9);
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm read param not in range");
+                Debug.failFast("Comm read param not in range"); return -1;
         }
     }
 
-    public static void writeDucksAll(int idx, int value) throws GameActionException {assert value >= 0; assert value < 2;
+    public static void writeMyflagsId(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf0 = (buf0 & 32767) | (value << 15);
-                dirty0 = 1;
+                buf3 = (buf3 & 57345) | (value << 1);
+                dirty3 = 1;
                 break;
             case 1:
-                buf0 = (buf0 & 49151) | (value << 14);
-                dirty0 = 1;
+                buf5 = (buf5 & 65534) | ((value & 2048) >>> 11);
+                dirty5 = 1;
+                buf6 = (buf6 & 31) | ((value & 2047) << 5);
+                dirty6 = 1;
                 break;
             case 2:
-                buf0 = (buf0 & 57343) | (value << 13);
-                dirty0 = 1;
-                break;
-            case 3:
-                buf0 = (buf0 & 61439) | (value << 12);
-                dirty0 = 1;
-                break;
-            case 4:
-                buf0 = (buf0 & 63487) | (value << 11);
-                dirty0 = 1;
-                break;
-            case 5:
-                buf0 = (buf0 & 64511) | (value << 10);
-                dirty0 = 1;
-                break;
-            case 6:
-                buf0 = (buf0 & 65023) | (value << 9);
-                dirty0 = 1;
-                break;
-            case 7:
-                buf0 = (buf0 & 65279) | (value << 8);
-                dirty0 = 1;
-                break;
-            case 8:
-                buf0 = (buf0 & 65407) | (value << 7);
-                dirty0 = 1;
-                break;
-            case 9:
-                buf0 = (buf0 & 65471) | (value << 6);
-                dirty0 = 1;
-                break;
-            case 10:
-                buf0 = (buf0 & 65503) | (value << 5);
-                dirty0 = 1;
-                break;
-            case 11:
-                buf0 = (buf0 & 65519) | (value << 4);
-                dirty0 = 1;
-                break;
-            case 12:
-                buf0 = (buf0 & 65527) | (value << 3);
-                dirty0 = 1;
-                break;
-            case 13:
-                buf0 = (buf0 & 65531) | (value << 2);
-                dirty0 = 1;
-                break;
-            case 14:
-                buf0 = (buf0 & 65533) | (value << 1);
-                dirty0 = 1;
-                break;
-            case 15:
-                buf0 = (buf0 & 65534) | (value);
-                dirty0 = 1;
-                break;
-            case 16:
-                buf1 = (buf1 & 32767) | (value << 15);
-                dirty1 = 1;
-                break;
-            case 17:
-                buf1 = (buf1 & 49151) | (value << 14);
-                dirty1 = 1;
-                break;
-            case 18:
-                buf1 = (buf1 & 57343) | (value << 13);
-                dirty1 = 1;
-                break;
-            case 19:
-                buf1 = (buf1 & 61439) | (value << 12);
-                dirty1 = 1;
-                break;
-            case 20:
-                buf1 = (buf1 & 63487) | (value << 11);
-                dirty1 = 1;
-                break;
-            case 21:
-                buf1 = (buf1 & 64511) | (value << 10);
-                dirty1 = 1;
-                break;
-            case 22:
-                buf1 = (buf1 & 65023) | (value << 9);
-                dirty1 = 1;
-                break;
-            case 23:
-                buf1 = (buf1 & 65279) | (value << 8);
-                dirty1 = 1;
-                break;
-            case 24:
-                buf1 = (buf1 & 65407) | (value << 7);
-                dirty1 = 1;
-                break;
-            case 25:
-                buf1 = (buf1 & 65471) | (value << 6);
-                dirty1 = 1;
-                break;
-            case 26:
-                buf1 = (buf1 & 65503) | (value << 5);
-                dirty1 = 1;
-                break;
-            case 27:
-                buf1 = (buf1 & 65519) | (value << 4);
-                dirty1 = 1;
-                break;
-            case 28:
-                buf1 = (buf1 & 65527) | (value << 3);
-                dirty1 = 1;
-                break;
-            case 29:
-                buf1 = (buf1 & 65531) | (value << 2);
-                dirty1 = 1;
-                break;
-            case 30:
-                buf1 = (buf1 & 65533) | (value << 1);
-                dirty1 = 1;
-                break;
-            case 31:
-                buf1 = (buf1 & 65534) | (value);
-                dirty1 = 1;
-                break;
-            case 32:
-                buf2 = (buf2 & 32767) | (value << 15);
-                dirty2 = 1;
-                break;
-            case 33:
-                buf2 = (buf2 & 49151) | (value << 14);
-                dirty2 = 1;
-                break;
-            case 34:
-                buf2 = (buf2 & 57343) | (value << 13);
-                dirty2 = 1;
-                break;
-            case 35:
-                buf2 = (buf2 & 61439) | (value << 12);
-                dirty2 = 1;
-                break;
-            case 36:
-                buf2 = (buf2 & 63487) | (value << 11);
-                dirty2 = 1;
-                break;
-            case 37:
-                buf2 = (buf2 & 64511) | (value << 10);
-                dirty2 = 1;
-                break;
-            case 38:
-                buf2 = (buf2 & 65023) | (value << 9);
-                dirty2 = 1;
-                break;
-            case 39:
-                buf2 = (buf2 & 65279) | (value << 8);
-                dirty2 = 1;
-                break;
-            case 40:
-                buf2 = (buf2 & 65407) | (value << 7);
-                dirty2 = 1;
-                break;
-            case 41:
-                buf2 = (buf2 & 65471) | (value << 6);
-                dirty2 = 1;
-                break;
-            case 42:
-                buf2 = (buf2 & 65503) | (value << 5);
-                dirty2 = 1;
-                break;
-            case 43:
-                buf2 = (buf2 & 65519) | (value << 4);
-                dirty2 = 1;
-                break;
-            case 44:
-                buf2 = (buf2 & 65527) | (value << 3);
-                dirty2 = 1;
-                break;
-            case 45:
-                buf2 = (buf2 & 65531) | (value << 2);
-                dirty2 = 1;
-                break;
-            case 46:
-                buf2 = (buf2 & 65533) | (value << 1);
-                dirty2 = 1;
-                break;
-            case 47:
-                buf2 = (buf2 & 65534) | (value);
-                dirty2 = 1;
-                break;
-            case 48:
-                buf3 = (buf3 & 32767) | (value << 15);
-                dirty3 = 1;
-                break;
-            case 49:
-                buf3 = (buf3 & 49151) | (value << 14);
-                dirty3 = 1;
+                buf8 = (buf8 & 65504) | ((value & 3968) >>> 7);
+                dirty8 = 1;
+                buf9 = (buf9 & 511) | ((value & 127) << 9);
+                dirty9 = 1;
                 break;
             default:
-                throw new GameActionException(GameActionExceptionType.INTERNAL_ERROR, "Comm write param not in range");
+                Debug.failFast("Comm write param not in range"); 
         }
     }
 
-    public static int readSymmetryVertical() throws GameActionException {
-        return (buf3 & 8192) >>> 13;
+    public static int readMyflagsExists(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf3 & 1);
+            case 1: return (buf6 & 16) >>> 4;
+            case 2: return (buf9 & 256) >>> 8;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
     }
 
-    public static void writeSymmetryVertical(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 57343) | (value << 13);
-        dirty3 = 1;
+    public static void writeMyflagsExists(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf3 = (buf3 & 65534) | (value);
+                dirty3 = 1;
+                break;
+            case 1:
+                buf6 = (buf6 & 65519) | (value << 4);
+                dirty6 = 1;
+                break;
+            case 2:
+                buf9 = (buf9 & 65279) | (value << 8);
+                dirty9 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
     }
 
-    public static int readSymmetryHorizontal() throws GameActionException {
-        return (buf3 & 4096) >>> 12;
+    public static int readMyflagsLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf4 & 65520) >>> 4;
+            case 1: return ((buf6 & 15) << 8) + ((buf7 & 65280) >>> 8);
+            case 2: return ((buf9 & 255) << 4) + ((buf10 & 61440) >>> 12);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
     }
 
-    public static void writeSymmetryHorizontal(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 61439) | (value << 12);
-        dirty3 = 1;
+    public static void writeMyflagsLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf4 = (buf4 & 15) | (value << 4);
+                dirty4 = 1;
+                break;
+            case 1:
+                buf6 = (buf6 & 65520) | ((value & 3840) >>> 8);
+                dirty6 = 1;
+                buf7 = (buf7 & 255) | ((value & 255) << 8);
+                dirty7 = 1;
+                break;
+            case 2:
+                buf9 = (buf9 & 65280) | ((value & 4080) >>> 4);
+                dirty9 = 1;
+                buf10 = (buf10 & 4095) | ((value & 15) << 12);
+                dirty10 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
     }
 
-    public static int readSymmetryRotational() throws GameActionException {
-        return (buf3 & 2048) >>> 11;
+    public static int readMyflagsOriginalLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf4 & 15) << 8) + ((buf5 & 65280) >>> 8);
+            case 1: return ((buf7 & 255) << 4) + ((buf8 & 61440) >>> 12);
+            case 2: return (buf10 & 4095);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
     }
 
-    public static void writeSymmetryRotational(int value) throws GameActionException {assert value >= 0; assert value < 2;
-        buf3 = (buf3 & 63487) | (value << 11);
-        dirty3 = 1;
+    public static void writeMyflagsOriginalLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf4 = (buf4 & 65520) | ((value & 3840) >>> 8);
+                dirty4 = 1;
+                buf5 = (buf5 & 255) | ((value & 255) << 8);
+                dirty5 = 1;
+                break;
+            case 1:
+                buf7 = (buf7 & 65280) | ((value & 4080) >>> 4);
+                dirty7 = 1;
+                buf8 = (buf8 & 4095) | ((value & 15) << 12);
+                dirty8 = 1;
+                break;
+            case 2:
+                buf10 = (buf10 & 61440) | (value);
+                dirty10 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
     }
 
-    public static int readSymmetryAll() throws GameActionException {
-        return (buf3 & 14336) >>> 11;
+    public static int readMyflagsAssigned(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf5 & 252) >>> 2;
+            case 1: return (buf8 & 4032) >>> 6;
+            case 2: return (buf11 & 64512) >>> 10;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
     }
 
-    public static void writeSymmetryAll(int value) throws GameActionException {assert value >= 0; assert value < 8;
-        buf3 = (buf3 & 51199) | (value << 11);
-        dirty3 = 1;
+    public static void writeMyflagsAssigned(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf5 = (buf5 & 65283) | (value << 2);
+                dirty5 = 1;
+                break;
+            case 1:
+                buf8 = (buf8 & 61503) | (value << 6);
+                dirty8 = 1;
+                break;
+            case 2:
+                buf11 = (buf11 & 1023) | (value << 10);
+                dirty11 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readMyflagsDistress(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf5 & 2) >>> 1;
+            case 1: return (buf8 & 32) >>> 5;
+            case 2: return (buf11 & 512) >>> 9;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeMyflagsDistress(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf5 = (buf5 & 65533) | (value << 1);
+                dirty5 = 1;
+                break;
+            case 1:
+                buf8 = (buf8 & 65503) | (value << 5);
+                dirty8 = 1;
+                break;
+            case 2:
+                buf11 = (buf11 & 65023) | (value << 9);
+                dirty11 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsId(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf11 & 511) << 3) + ((buf12 & 57344) >>> 13);
+            case 1: return (buf14 & 4095);
+            case 2: return (buf17 & 32760) >>> 3;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsId(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf11 = (buf11 & 65024) | ((value & 4088) >>> 3);
+                dirty11 = 1;
+                buf12 = (buf12 & 8191) | ((value & 7) << 13);
+                dirty12 = 1;
+                break;
+            case 1:
+                buf14 = (buf14 & 61440) | (value);
+                dirty14 = 1;
+                break;
+            case 2:
+                buf17 = (buf17 & 32775) | (value << 3);
+                dirty17 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsExists(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf12 & 4096) >>> 12;
+            case 1: return (buf15 & 32768) >>> 15;
+            case 2: return (buf17 & 4) >>> 2;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsExists(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf12 = (buf12 & 61439) | (value << 12);
+                dirty12 = 1;
+                break;
+            case 1:
+                buf15 = (buf15 & 32767) | (value << 15);
+                dirty15 = 1;
+                break;
+            case 2:
+                buf17 = (buf17 & 65531) | (value << 2);
+                dirty17 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf12 & 4095);
+            case 1: return (buf15 & 32760) >>> 3;
+            case 2: return ((buf17 & 3) << 10) + ((buf18 & 65472) >>> 6);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf12 = (buf12 & 61440) | (value);
+                dirty12 = 1;
+                break;
+            case 1:
+                buf15 = (buf15 & 32775) | (value << 3);
+                dirty15 = 1;
+                break;
+            case 2:
+                buf17 = (buf17 & 65532) | ((value & 3072) >>> 10);
+                dirty17 = 1;
+                buf18 = (buf18 & 63) | ((value & 1023) << 6);
+                dirty18 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsOriginalLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf13 & 65520) >>> 4;
+            case 1: return ((buf15 & 7) << 9) + ((buf16 & 65408) >>> 7);
+            case 2: return ((buf18 & 63) << 6) + ((buf19 & 64512) >>> 10);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsOriginalLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf13 = (buf13 & 15) | (value << 4);
+                dirty13 = 1;
+                break;
+            case 1:
+                buf15 = (buf15 & 65528) | ((value & 3584) >>> 9);
+                dirty15 = 1;
+                buf16 = (buf16 & 127) | ((value & 511) << 7);
+                dirty16 = 1;
+                break;
+            case 2:
+                buf18 = (buf18 & 65472) | ((value & 4032) >>> 6);
+                dirty18 = 1;
+                buf19 = (buf19 & 1023) | ((value & 63) << 10);
+                dirty19 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsConfirmed(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf13 & 8) >>> 3;
+            case 1: return (buf16 & 64) >>> 6;
+            case 2: return (buf19 & 512) >>> 9;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsConfirmed(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf13 = (buf13 & 65527) | (value << 3);
+                dirty13 = 1;
+                break;
+            case 1:
+                buf16 = (buf16 & 65471) | (value << 6);
+                dirty16 = 1;
+                break;
+            case 2:
+                buf19 = (buf19 & 65023) | (value << 9);
+                dirty19 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsCarried(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf13 & 4) >>> 2;
+            case 1: return (buf16 & 32) >>> 5;
+            case 2: return (buf19 & 256) >>> 8;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsCarried(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf13 = (buf13 & 65531) | (value << 2);
+                dirty13 = 1;
+                break;
+            case 1:
+                buf16 = (buf16 & 65503) | (value << 5);
+                dirty16 = 1;
+                break;
+            case 2:
+                buf19 = (buf19 & 65279) | (value << 8);
+                dirty19 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsAssigned(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf13 & 3) << 4) + ((buf14 & 61440) >>> 12);
+            case 1: return ((buf16 & 31) << 1) + ((buf17 & 32768) >>> 15);
+            case 2: return (buf19 & 252) >>> 2;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsAssigned(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf13 = (buf13 & 65532) | ((value & 48) >>> 4);
+                dirty13 = 1;
+                buf14 = (buf14 & 4095) | ((value & 15) << 12);
+                dirty14 = 1;
+                break;
+            case 1:
+                buf16 = (buf16 & 65504) | ((value & 62) >>> 1);
+                dirty16 = 1;
+                buf17 = (buf17 & 32767) | ((value & 1) << 15);
+                dirty17 = 1;
+                break;
+            case 2:
+                buf19 = (buf19 & 65283) | (value << 2);
+                dirty19 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
     }
 
     // BUFFER POOL READ AND WRITE METHODS

@@ -1,8 +1,6 @@
 package pathing_test.fast;
 
-import battlecode.common.Direction;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 //awful hacks for faster math
 public class FastMath {
@@ -24,6 +22,11 @@ public class FastMath {
     public static int rand256() {
         randIndex = (randIndex + 1) % lookupRand256Length;
         return lookupRand256.charAt(randIndex);
+    }
+
+    public static float fakefloat() {
+        float rv = (float) (rand256() / 256.0);
+        return rv;
     }
 
     public static MapLocation addVec(MapLocation a, MapLocation b) {
