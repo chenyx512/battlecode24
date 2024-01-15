@@ -49,7 +49,7 @@ public class PathFinder extends RobotPlayer {
         rc = r;
     }
 
-    public static void move(MapLocation loc) {
+    public static void move(MapLocation loc) throws GameActionException {
         if (!rc.isMovementReady())
             return;
         Debug.setIndicatorDot(Debug.PATHFINDING, target, 255, 0, 0);
@@ -61,7 +61,8 @@ public class PathFinder extends RobotPlayer {
         static DirectionStack dirStack = new DirectionStack();
         static MapLocation prevTarget = null; // previous target
         static int currentTurnDir = 0;
-        static int MAX_DEPTH = 15;
+        static final int MAX_DEPTH = 25;
+        static final int BYTECODE_CUTOFF = 6000;
 
         static Direction turn(Direction dir) {
             return currentTurnDir == 0 ? dir.rotateLeft() : dir.rotateRight();
@@ -71,95 +72,91 @@ public class PathFinder extends RobotPlayer {
             return turnDir == 0 ? dir.rotateLeft() : dir.rotateRight();
         }
 
-        static void move() {
-            try {
-                // different target? ==> previous data does not help!
-                if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
-                    // Debug.println("New target: " + target, id);
-                    Debug.println(Debug.PATHFINDING, "New target");
-                    resetPathfinding();
+        static void move() throws GameActionException {
+            // different target? ==> previous data does not help!
+            if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
+                // Debug.println("New target: " + target, id);
+                Debug.println(Debug.PATHFINDING, "New target");
+                resetPathfinding();
+            }
+            prevTarget = target;
+            if (dirStack.size == 0) {
+                Direction dir = rc.getLocation().directionTo(target);
+                // TODO: does not use the canPass nonsense in Gone Fishin
+                if (rc.canMove(dir)) {
+                    rc.move(dir);
+                    return;
                 }
-                prevTarget = target;
+                Direction dirL = dir.rotateLeft();
+                if (rc.canMove(dirL)) {
+                    rc.move(dirL);
+                    return;
+                }
+                Direction dirR = dir.rotateRight();
+                if (rc.canMove(dirR)) {
+                    rc.move(dirR);
+                    return;
+                }
+                currentTurnDir = getTurnDir(dir);
+                // obstacle encountered, rotate and add new dirs to stack
+                while (!rc.canMove(dir) && dirStack.size < 8) {
+                    if (!rc.onTheMap(rc.getLocation().add(dir))) {
+                        currentTurnDir ^= 1;
+                        dirStack.clear();
+                        return; // do not move
+                    }
+                    dirStack.push(dir);
+                    dir = turn(dir);
+                }
+                if (dirStack.size == 8) {
+                    Debug.println(Debug.PATHFINDING, "blocked");
+                }
+                else {
+                    rc.move(dir);
+                }
+            }
+            else {
+                // TODO: don't understand this (why pop 2?)
+                // dxx
+                // xo
+                // x
+                // suppose you are at o, x is wall, and d is another duck, you are pathing left and bugging up rn
+                // and the duck moves away, you wanna take its spot
+                if (dirStack.size > 1 && rc.canMove(dirStack.top(2))) {
+                    dirStack.pop(2);
+                }
+                while (dirStack.size > 0 && rc.canMove(dirStack.top())) {
+                    dirStack.pop();
+                }
                 if (dirStack.size == 0) {
                     Direction dir = rc.getLocation().directionTo(target);
-                    // TODO: does not use the canPass nonsense in Gone Fishin
-                    if (rc.canMove(dir)) {
-                        rc.move(dir);
-                        return;
-                    }
-                    Direction dirL = dir.rotateLeft();
-                    if (rc.canMove(dirL)) {
-                        rc.move(dirL);
-                        return;
-                    }
-                    Direction dirR = dir.rotateRight();
-                    if (rc.canMove(dirR)) {
-                        rc.move(dirR);
-                        return;
-                    }
-                    currentTurnDir = getTurnDir(dir);
-                    // obstacle encountered, rotate and add new dirs to stack
-                    while (!rc.canMove(dir) && dirStack.size < 8) {
-                        if (!rc.onTheMap(rc.getLocation().add(dir))) {
-                            currentTurnDir ^= 1;
-                            dirStack.clear();
-                            return; // do not move
-                        }
+                    if (!rc.canMove(dir)) {
                         dirStack.push(dir);
-                        dir = turn(dir);
-                    }
-                    if (dirStack.size == 8) {
-                        Debug.println(Debug.PATHFINDING, "blocked");
                     }
                     else {
                         rc.move(dir);
+                        return;
                     }
                 }
-                else {
-                    // TODO: don't understand this (why pop 2?)
-                    // dxx
-                    // xo
-                    // x
-                    // suppose you are at o, x is wall, and d is another duck, you are pathing left and bugging up rn
-                    // and the duck moves away, you wanna take its spot
-                    if (dirStack.size > 1 && rc.canMove(dirStack.top(2))) {
-                        dirStack.pop(2);
+                // keep rotating and adding things to the stack
+                Direction curDir;
+                int stackSizeLimit = Math.min(DirectionStack.STACK_SIZE, dirStack.size + 8);
+                while (dirStack.size > 0 && !rc.canMove(curDir = turn(dirStack.top()))) {
+                    if (!rc.onTheMap(rc.getLocation().add(curDir))) {
+                        currentTurnDir ^= 1;
+                        dirStack.clear();
+                        return; // do not move
                     }
-                    while (dirStack.size > 0 && rc.canMove(dirStack.top())) {
-                        dirStack.pop();
-                    }
-                    if (dirStack.size == 0) {
-                        Direction dir = rc.getLocation().directionTo(target);
-                        if (!rc.canMove(dir)) {
-                            dirStack.push(dir);
-                        }
-                        else {
-                            rc.move(dir);
-                            return;
-                        }
-                    }
-                    // keep rotating and adding things to the stack
-                    Direction curDir;
-                    int stackSizeLimit = Math.min(DirectionStack.STACK_SIZE, dirStack.size + 8);
-                    while (dirStack.size > 0 && !rc.canMove(curDir = turn(dirStack.top()))) {
-                        if (!rc.onTheMap(rc.getLocation().add(curDir))) {
-                            currentTurnDir ^= 1;
-                            dirStack.clear();
-                            return; // do not move
-                        }
-                        dirStack.push(curDir);
-                        if (dirStack.size == stackSizeLimit) {
-                            dirStack.clear();
-                            return;
-                        }
-                    }
-                    Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
-                    if (rc.canMove(moveDir)) {
-                        rc.move(moveDir);
+                    dirStack.push(curDir);
+                    if (dirStack.size == stackSizeLimit) {
+                        dirStack.clear();
+                        return;
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
+                if (rc.canMove(moveDir)) {
+                    rc.move(moveDir);
+                }
             }
         }
 
@@ -172,11 +169,18 @@ public class PathFinder extends RobotPlayer {
             }
             now = now.add(dir);
 
+            if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
+                return -1;
+            }
+
             int ans = 0;
             while (dirStack.size > 0) {
                 ans++;
                 if (ans > MAX_DEPTH) {
                     break;
+                }
+                if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
+                    return -1;
                 }
                 while (dirStack.size > 0 && canPass(now.add(dirStack.top()), dirStack.top())) {
                     dirStack.pop();
