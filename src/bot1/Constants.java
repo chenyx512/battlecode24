@@ -3,7 +3,7 @@ package bot1;
 import battlecode.common.Direction;
 
 public class Constants {
-    public static boolean DEBUG_FAIL_FAST = true;
+    public static boolean DEBUG_FAIL_FAST = false;
 
     /** Array containing all the possible movement directions. */
     public static final Direction[] MOVEABLE_DIRECTIONS = {

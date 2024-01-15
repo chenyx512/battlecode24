@@ -43,7 +43,7 @@ public class Micro extends Robot {
             tryMove(bestMicro.dir);
             Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
             tryAttack();
-            if (bestMicro.numAttackRangeNext == 0 || (bestMicro.allyCloseCnt > 0 && SpecialtyManager.isHealer())) {
+            if (bestMicro.numAttackRangeNext == 0 || (bestMicro.allyCloseCnt > 0 || SpecialtyManager.isHealer())) {
                 tryHeal();
             }
             return true;
@@ -345,7 +345,7 @@ public class Micro extends Robot {
         }
 
         boolean isBetterThan(MicroDirection other) {
-            if (bot1.SpecialtyManager.isBuilder()) {
+            if (SpecialtyManager.isBuilder()) {
                 // play safe as builder
                 if (canMove != other.canMove) return canMove > other.canMove;
                 if (numAttackRange - canKill != other.numAttackRange - other.canKill)
