@@ -63,6 +63,7 @@ public class FlagManager extends RobotPlayer {
 
     public static boolean act() throws GameActionException {
         boolean[] enemyFlagSeen = new boolean[3];
+        boolean hasFlag = rc.hasFlag(); // handle edge case of picking flag up in our own spawn zone
         for (FlagInfo flag : rc.senseNearbyFlags(-1)) {
             if (flag.getTeam() == myTeam) {
                 int flagIndex = getMyFlagIndex(flag);
@@ -93,13 +94,14 @@ public class FlagManager extends RobotPlayer {
                             flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
                             carriedEnemyFlagIndex = flagIndex;
                             rc.pickupFlag(flag.getLocation());
+                            hasFlag = true;
                             break;
                         }
                     }
                 }
             }
         }
-        if (rc.hasFlag()) {
+        if (hasFlag) {
             lastFlagCarryRound = rc.getRoundNum();
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
