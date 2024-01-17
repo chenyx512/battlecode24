@@ -3,7 +3,7 @@ package bot1;
 import battlecode.common.*;
 
 public class SpecialtyManager extends RobotPlayer {
-    public static int duckSeqID;
+    public static int duckSeqID; // a unique integer for each duck between 1-50, 0 means unset
     private static char[] duckID2seq = Constants.STRING_LEN_4200.toCharArray();
     private static int seqIDcnt;
     public static int buildLevel, attackLevel, healLevel;
@@ -13,7 +13,7 @@ public class SpecialtyManager extends RobotPlayer {
     }
 
     public static boolean isBuilder(RobotInfo r) {
-        int seq = duckID2seq[r.getID() % 4096];
+        int seq = duckID2seq[r.getID() - 9999];
         return seq > 0 && seq <= Constants.NUM_BUILDER;
     }
 
@@ -23,7 +23,7 @@ public class SpecialtyManager extends RobotPlayer {
     }
 
     public static boolean isHealer(RobotInfo r) {
-        int seq = duckID2seq[r.getID() % 4096];
+        int seq = duckID2seq[r.getID() - 9999];
         return seq > Constants.NUM_BUILDER
                 && seq <= Constants.NUM_BUILDER + Constants.NUM_HEALER;
     }
@@ -63,28 +63,28 @@ public class SpecialtyManager extends RobotPlayer {
     }
 
     public static void initTurn() throws GameActionException {
-        // A1, B1, A2, B2, A3, B3.. A50, B50 for turn 1
-        // A1, B1, A2, B2, A3, B3.. A50, B50 for turn 2
         buildLevel = rc.getLevel(SkillType.BUILD);
         attackLevel = rc.getLevel(SkillType.ATTACK);
         healLevel = rc.getLevel(SkillType.HEAL);
 
-        Debug.printString(Debug.SPECIALTY, String.format("seq%d", duckSeqID));;
-
-        if (seqIDcnt < 50) {
+        if (duckSeqID == 0) {
+            duckSeqID = Comms.readSyncId() + 1;
+            Comms.writeSyncId(duckSeqID == 50? 0 : duckSeqID);
+        } else if (seqIDcnt < 50) {
             if (Comms.readSyncId() == 0) {
                 // my turn to report ID
-                Comms.writeSyncId(rc.getID() % 4096);
+                Comms.writeSyncId(rc.getID() - 9999);
+                Debug.betterAssert(duckSeqID == seqIDcnt + 1, String.format("%d %d", duckSeqID, seqIDcnt));
                 duckSeqID = ++seqIDcnt;
-                duckID2seq[rc.getID() % 4096] = (char) duckSeqID;
-                Debug.println(Debug.SPECIALTY, String.format("duck id %d seq %d", rc.getID(), duckSeqID));
+                duckID2seq[rc.getID() - 9999] = (char) duckSeqID;
             } else {
-                if (Comms.readSyncId() == rc.getID() % 4096) {
+                if (Comms.readSyncId() == rc.getID() - 9999) {
                     Comms.writeSyncId(0);
                 } else {
                     duckID2seq[Comms.readSyncId()] = (char) ++seqIDcnt;
                 }
             }
         }
+        Debug.printString(Debug.SPECIALTY, String.format("seq%d", duckSeqID));;
     }
 }

@@ -128,12 +128,10 @@ public class PathFinder extends Robot {
                 }
                 if (dirStack.size == 0) {
                     Direction dir = rc.getLocation().directionTo(target);
-                    if (!canMoveOrFill(dir)) {
-                        dirStack.push(dir);
-                    }
-                    else {
+                    if (canMoveOrFill(dir)) {
                         return dir;
                     }
+                    dirStack.push(dir);
                 }
                 // keep rotating and adding things to the stack
                 Direction curDir;
@@ -224,8 +222,10 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             if (rc.canMove(dir))
                 return true;
+            if (rc.hasFlag())
+                return false;
             MapLocation loc = rc.getLocation().add(dir);
-            if (rc.canFill(loc) && rc.getCrumbs() > 30) // micro filling has priority
+            if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater() && rc.getCrumbs() > 50)
                 return true;
             if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isDam())
                 return true;

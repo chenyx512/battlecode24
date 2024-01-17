@@ -11,13 +11,14 @@ SCHEMA = {
     'sync': {
         'slots': 1,
         'bits': {
-            'id': 12,
+            'id': 13,
         }
     },
     'HQ': {
         'slots': 3,
         'bits': {
             'loc': 12,
+            'dis2next': 8,
         }
     },
     'symmetry': {
