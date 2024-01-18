@@ -149,11 +149,6 @@ public class Micro extends Robot {
             return;
         RobotInfo healingTarget = null;
         double bestScore = -Double.MAX_VALUE;
-        // consider self healing since senseNearbyRobot doesn't return self
-        if (rc.getHealth() < GameConstants.DEFAULT_HEALTH) {
-            healingTarget = rc.senseRobotAtLocation(rc.getLocation());
-            bestScore = getHealingTargetScore(healingTarget);
-        }
         for (RobotInfo r: rc.senseNearbyRobots(GameConstants.HEAL_RADIUS_SQUARED, myTeam)) {
             if (r.health == GameConstants.DEFAULT_HEALTH)
                 continue;
