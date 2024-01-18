@@ -2,6 +2,7 @@ package bot1;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import bot1.fast.FastMath;
 
@@ -24,11 +25,15 @@ public class RoleAssigner extends RobotPlayer {
         } else {
             updateRole();
             if (role >= 0 && role < 3 && Comms.readMyflagsAssigned(role) == 1 && rc.getRoundNum() > 200) {
-                // if I am the only one guarding this flag and I can't sense flag loc, distress call
-                if (!Util.int2loc(Comms.readMyflagsLoc(role)).isWithinDistanceSquared(rc.getLocation(), 20)) {
+                // if I am the only one guarding this flag
+                MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(role));
+                // distress if I can't see the flag
+                if (!rc.canSenseLocation(flagLoc)) {
                     Comms.writeMyflagsDistress(role, 1);
+                    Debug.println(Debug.INFO, "flag distress due to not seen" + flagLoc.toString());
                 } else if (Comms.readMyflagsOriginalLoc(role) == Comms.readMyflagsLoc(role)
                         && rc.senseNearbyFlags(-1, myTeam).length == 0) {
+                    Debug.println(Debug.INFO, "flag lost" + Util.int2loc(Comms.readMyflagsOriginalLoc(role)).toString());
                     Comms.writeMyflagsExists(role, 0);
                 }
             }
@@ -116,15 +121,24 @@ public class RoleAssigner extends RobotPlayer {
             } else {
                 MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(newRole));
                 // for not distressed friendly flag, one and only one duck sits on it
-                // builder never sits on flag
+                // only Healer sits on flag
                 if (!SpecialtyManager.isHealer()) {
                     return -1;
-                } else if (rc.isSpawned() && !rc.getLocation().isWithinDistanceSquared(flagLoc, 20) && rc.getRoundNum() > 200) {
-                    return -1;
-                } else if (role == newRole){
-                    return Comms.readMyflagsAssigned(newRole) > 1 ? -1 : 1;
+                } else if (rc.isSpawned() && rc.getLocation().equals(flagLoc)) {
+                    return 1;
+                } else if (rc.isSpawned() && rc.canSenseLocation(flagLoc)) {
+                    // If I can see the flag, the first person to sit on it wins
+                    if (rc.senseRobotAtLocation(flagLoc) != null) {
+                        return -1;
+                    }
+                    return 1;
                 } else {
-                    return Comms.readMyflagsAssigned(newRole) > 0 ? -1 : 1;
+                    // If I cannot see the flag, send one person there only
+                    if (role == newRole) {
+                        return Comms.readMyflagsAssigned(newRole) > 1 ? -1 : 1;
+                    } else {
+                        return Comms.readMyflagsAssigned(newRole) > 0 ? -1 : 1;
+                    }
                 }
             }
         } else {
@@ -154,7 +168,7 @@ public class RoleAssigner extends RobotPlayer {
         return disScore * assignedScore;
     }
 
-    private static void reassign(int newRole) throws GameActionException {
+    public static void reassign(int newRole) throws GameActionException {
         if (newRole == role)
             return;
         switch (role) {

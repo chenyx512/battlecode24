@@ -19,10 +19,14 @@ public class Robot extends RobotPlayer {
     static void initTurn() throws GameActionException {
         Comms.pull();
         MapRecorder.updateSym();
-        RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache
+        SpecialtyManager.initTurn();
+        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
+            SetupManager.initTurn();
+        } else {
+            RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache
+        }
         Cache.initTurn();
         FlagManager.initTurn();
-        SpecialtyManager.initTurn(); // relies on cache
 
         // updates self stats
         attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
@@ -54,6 +58,11 @@ public class Robot extends RobotPlayer {
 //        }
         if (!rc.isSpawned()) {
             return;
+        }
+
+        if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
+            if (SetupManager.act())
+                return;
         }
 
         RoleAssigner.drawDebug();

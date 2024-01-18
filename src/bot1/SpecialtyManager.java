@@ -2,7 +2,7 @@ package bot1;
 
 import battlecode.common.*;
 
-public class SpecialtyManager extends RobotPlayer {
+public class SpecialtyManager extends Robot {
     public static int duckSeqID; // a unique integer for each duck between 1-50, 0 means unset
     private static char[] duckID2seq = Constants.STRING_LEN_4200.toCharArray();
     private static int seqIDcnt;

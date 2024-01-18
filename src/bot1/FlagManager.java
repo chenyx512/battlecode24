@@ -63,15 +63,17 @@ public class FlagManager extends RobotPlayer {
 
     public static boolean act() throws GameActionException {
         boolean[] enemyFlagSeen = new boolean[3];
+        boolean[] myFlagSeen = new boolean[3];
         boolean hasFlag = rc.hasFlag(); // handle edge case of picking flag up in our own spawn zone
         for (FlagInfo flag : rc.senseNearbyFlags(-1)) {
             if (flag.getTeam() == myTeam) {
                 int flagIndex = getMyFlagIndex(flag);
                 Comms.writeMyflagsExists(flagIndex, 1);
+                Comms.writeMyflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
+                myFlagSeen[flagIndex] = true;
                 if ((flag.isPickedUp() && rc.getRoundNum() > 200)
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
                     Comms.writeMyflagsDistress(flagIndex, 1);
-                    Comms.writeMyflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
                 }
             } else {
                 int flagIndex = getOppFlagIndex(flag);
@@ -124,7 +126,10 @@ public class FlagManager extends RobotPlayer {
                 if (Comms.readMyflagsExists(i) == 1 && Comms.readMyflagsDistress(i) == 1) {
                     MapLocation loc = Util.int2loc(Comms.readMyflagsLoc(i));
                     if (rc.getLocation().isWithinDistanceSquared(loc, 2)
-                            && Cache.nearbyEnemies.length == 0) {
+                            && Cache.nearbyEnemies.length == 0
+                            && (Comms.readMyflagsOriginalLoc(i) == Comms.readMyflagsLoc(i) || !myFlagSeen[i])
+                    ) {
+                        // reset only if the flag has returned
                         Comms.writeMyflagsDistress(i, 0);
                         Comms.writeMyflagsLoc(i, Comms.readMyflagsOriginalLoc(i));
                     }
