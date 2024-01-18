@@ -101,8 +101,11 @@ public class Micro extends Robot {
                 bestTarget = r;
             }
         }
-        if (bestTarget != null && rc.canAttack(bestTarget.location))
+        if (bestTarget != null && rc.canAttack(bestTarget.location)) {
             rc.attack(bestTarget.location);
+            if (rc.isActionReady())
+                tryAttack();
+        }
     }
 
     private static void tryDropTrap() throws GameActionException {
