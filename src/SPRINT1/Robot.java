@@ -85,7 +85,6 @@ public class Robot extends RobotPlayer {
         MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
         if (crumbs.length > 0) {
             PathFinder.move(Util.getClosestLoc(crumbs));
-            return true;
         }
         return false;
     }
