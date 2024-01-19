@@ -77,7 +77,14 @@ public class Robot extends RobotPlayer {
             return;
 
         if (rc.getRoundNum() <= 150 && RoleAssigner.role > 2) {
-            PathFinder.move(Explorer.getUnseenExploreTarget());
+            MapLocation target = Explorer.getUnseenExploreTarget();
+            FlagInfo[] flags = rc.senseNearbyFlags(4, myTeam);
+            if (flags.length > 0) {
+                // stay away from flag carrier
+                PathFinder.tryMoveDir(rc.getLocation().directionTo(flags[0].getLocation()).opposite());
+            } else {
+                PathFinder.move(target);
+            }
         }  else {
             RoleAssigner.act();
         }

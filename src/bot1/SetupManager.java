@@ -7,6 +7,8 @@ import battlecode.common.MapLocation;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;
+    private static MapLocation flagDest;
+    private static boolean destReached;
     public static void initTurn() throws GameActionException {
         if (duckSeqID >= 4 && duckSeqID <= 6) {
             if (!rc.isSpawned()) {
@@ -29,27 +31,50 @@ public class SetupManager extends SpecialtyManager {
                     rc.pickupFlag(rc.getLocation());
                 }
             } else {
-                Direction bestDir = Direction.CENTER;
-                int bestScore = getFlagLocScore(rc.getLocation());
-                for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {
-                    if (!rc.canMove(dir)) {
-                        continue;
+                int START_ROUND = 30;
+                int END_ROUND = 160;
+                if (rc.getRoundNum() < START_ROUND)
+                    return true;
+                if (rc.getRoundNum() == START_ROUND) {
+                    int bestScore = Integer.MIN_VALUE;
+                    for (int i = 3; --i >= 0;) {
+                        int score = Util.getClosestDis(mySpawnCenters[i], oppSpawnCenters);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            flagDest = mySpawnCenters[i];
+                        }
                     }
-                    MapLocation loc = rc.getLocation().add(dir);
-                    if (getFlagDistance(flagCarrierID, loc) <= GameConstants.MIN_FLAG_SPACING_SQUARED) {
-                        continue;
-                    }
-                    int score = getFlagLocScore(loc);
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestDir = dir;
+                    Debug.println(Debug.INFO, String.format("flag %s going to %s", rc.getLocation().toString(), flagDest.toString()));
+                }
+                if (!destReached && rc.getRoundNum() <= END_ROUND && getFlagDistance(flagCarrierID, rc.getLocation()) > 52) {
+                    PathFinder.move(flagDest);
+                    if (rc.getLocation().isWithinDistanceSquared(flagDest, 4)) {
+                        destReached = true;
                     }
                 }
-                tryMove(bestDir);
+                if (destReached || rc.getRoundNum() > END_ROUND) {
+                    Direction bestDir = Direction.CENTER;
+                    double bestScore = getFlagLocScore(rc.getLocation());
+                    for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {
+                        if (!rc.canMove(dir)) {
+                            continue;
+                        }
+                        MapLocation loc = rc.getLocation().add(dir);
+                        if (getFlagDistance(flagCarrierID, loc) <= GameConstants.MIN_FLAG_SPACING_SQUARED) {
+                            continue;
+                        }
+                        double score = getFlagLocScore(loc);
+                        if (score > bestScore - 0.5) {
+                            bestScore = score;
+                            bestDir = dir;
+                        }
+                    }
+                    tryMove(bestDir);
 
-                Comms.writeMyflagsLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
-                if (rc.getRoundNum() == 200) {
-                    Comms.writeMyflagsOriginalLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
+                    Comms.writeMyflagsLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
+                    if (rc.getRoundNum() == 200) {
+                        Comms.writeMyflagsOriginalLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
+                    }
                 }
             }
             return true;
@@ -57,10 +82,10 @@ public class SetupManager extends SpecialtyManager {
         return false;
     }
 
-    private static int getFlagLocScore(MapLocation loc) {
-        int dis2enemy = Util.getClosestDis(loc, oppSpawnCenters);
-        int dis2hq = getDisToMyClosestSpawnCenter(loc);
-        return 2 * dis2enemy + dis2hq;
+    private static double getFlagLocScore(MapLocation loc) {
+        double dis2enemy = Math.sqrt(Util.getClosestDis(loc, oppSpawnCenters));
+        double dis2hq = Math.sqrt(loc.distanceSquaredTo(flagDest));
+        return dis2enemy - dis2hq;
     }
 
     private static int getFlagDistance(int flagid, MapLocation loc) throws GameActionException {

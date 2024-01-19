@@ -56,8 +56,12 @@ public class RoleAssigner extends RobotPlayer {
         if (loc == null) {
             return;
         }
-        if (role >= 3 && Comms.readOppflagsCarried(role - 3) == 1) {
-            PathFinder.escort(role - 3);
+        if (role >= 3) {
+            if (Comms.readOppflagsCarried(role - 3) == 1) {
+                PathFinder.escort(role - 3);
+            } else {
+                PathFinder.move(Explorer.getFlagTarget(role - 3, 15));
+            }
         } else {
             PathFinder.move(loc);
         }

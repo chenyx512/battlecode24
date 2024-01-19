@@ -176,13 +176,12 @@ public class PathFinder extends Robot {
                 if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
                     return -1;
                 }
+                if (dirStack.size > 1 && canPass(now, dirStack.top(2))) {
+                    dirStack.pop(2);
+                }
                 while (dirStack.size > 0 && canPass(now, dirStack.top())) {
                     dirStack.pop();
                 }
-                // is reference code correct?
-//                if (dirStack.size > 1 && canPass(now.add(dirStack.top()), dirStack.top(2))) {
-//                    dirStack.pop(2);
-//                }
 
                 while (dirStack.size > 0 && !canPass(now, turn(dirStack.top(), turnDir))) {
                     dirStack.push(turn(dirStack.top(), turnDir));
@@ -222,12 +221,17 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             if (rc.canMove(dir))
                 return true;
-            if (rc.hasFlag())
-                return false;
             MapLocation loc = rc.getLocation().add(dir);
-            if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater() && rc.getCrumbs() > 50)
+            if (!rc.canSenseLocation(loc))
+                return false;
+            if (rc.hasFlag()) {
+                if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS && rc.senseRobotAtLocation(loc) != null)
+                    return true;
+                return false;
+            }
+            if (rc.senseMapInfo(loc).isWater() && rc.getCrumbs() > 50)
                 return true;
-            if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isDam())
+            if (rc.senseMapInfo(loc).isDam())
                 return true;
             return false;
         }
