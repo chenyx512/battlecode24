@@ -1,4 +1,4 @@
-package bot1;
+package flagbot;
 
 import battlecode.common.*;
 
@@ -63,13 +63,6 @@ public class Robot extends RobotPlayer {
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
             if (SetupManager.act())
                 return;
-            // move away from active flag carriers
-            FlagInfo[] flags = rc.senseNearbyFlags(4, myTeam);
-            if (flags.length > 0) {
-                // stay away from flag carrier
-                PathFinder.tryMoveDir(rc.getLocation().directionTo(flags[0].getLocation()).opposite());
-                return;
-            }
         }
 
         RoleAssigner.drawDebug();
@@ -85,7 +78,13 @@ public class Robot extends RobotPlayer {
 
         if (rc.getRoundNum() <= 150 && RoleAssigner.role > 2) {
             MapLocation target = Explorer.getUnseenExploreTarget();
-            PathFinder.move(target);
+            FlagInfo[] flags = rc.senseNearbyFlags(4, myTeam);
+            if (flags.length > 0) {
+                // stay away from flag carrier
+                PathFinder.tryMoveDir(rc.getLocation().directionTo(flags[0].getLocation()).opposite());
+            } else {
+                PathFinder.move(target);
+            }
         }  else {
             RoleAssigner.act();
         }

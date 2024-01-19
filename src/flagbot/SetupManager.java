@@ -1,10 +1,10 @@
-package bot1;
+package flagbot;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
-import bot1.fast.FastMath;
+import flagbot.fast.FastMath;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;
@@ -47,13 +47,9 @@ public class SetupManager extends SpecialtyManager {
                     }
                     Debug.println(Debug.INFO, String.format("flag %s going to %s", rc.getLocation().toString(), flagDest.toString()));
                 }
-                if (!destReached && rc.getRoundNum() <= END_ROUND) {
-                    if (getFlagDistance(flagCarrierID, rc.getLocation()) > 52) {
-                        PathFinder.move(flagDest);
-                        if (rc.getLocation().isWithinDistanceSquared(flagDest, 4)) {
-                            destReached = true;
-                        }
-                    } else {
+                if (!destReached && rc.getRoundNum() <= END_ROUND && getFlagDistance(flagCarrierID, rc.getLocation()) > 52) {
+                    PathFinder.move(flagDest);
+                    if (rc.getLocation().isWithinDistanceSquared(flagDest, 4)) {
                         destReached = true;
                     }
                 }
@@ -68,8 +64,8 @@ public class SetupManager extends SpecialtyManager {
                         if (getFlagDistance(flagCarrierID, loc) <= GameConstants.MIN_FLAG_SPACING_SQUARED) {
                             continue;
                         }
-                        double score = getFlagLocScore(loc) + FastMath.fakefloat() * 2;
-                        if (score > bestScore) {
+                        double score = getFlagLocScore(loc);
+                        if (score > bestScore - 0.5) {
                             bestScore = score;
                             bestDir = dir;
                         }
