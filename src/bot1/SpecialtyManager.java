@@ -47,7 +47,7 @@ public class SpecialtyManager extends Robot {
             return false;
         for (int i = 8; --i >= 0;) {
             MapLocation loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
-            if (rc.canDig(loc)) {
+            if ((loc.x + loc.y) % 2 == 0 && rc.canDig(loc)) {
                 rc.dig(loc);
             }
         }

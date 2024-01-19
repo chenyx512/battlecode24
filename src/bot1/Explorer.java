@@ -6,6 +6,7 @@ import bot1.fast.FastMath;
 
 public class Explorer extends RobotPlayer {
     private static MapLocation exploreLoc = null;
+    private static MapLocation flagExploreLoc = null;
 
     static void getEmergencyTarget(int tries) {
         int maxX = W;
@@ -14,6 +15,9 @@ public class Explorer extends RobotPlayer {
             if (exploreLoc != null) return;
             MapLocation newLoc = new MapLocation((int)(FastMath.fakefloat()*maxX), (int)(FastMath.fakefloat()*maxY));
             //if (checkDanger && Robot.comm.isEnemyTerritoryRadial(newLoc)) continue;
+            if (Robot.getDisToMyClosestSpawnCenter(newLoc) > Util.getClosestDis(newLoc, Robot.oppSpawnCenters)) {
+                continue;
+            }
             if (!rc.canSenseLocation(newLoc)){
                 if (MapRecorder.getData(newLoc) == 0) {
                     exploreLoc = newLoc;
@@ -27,9 +31,9 @@ public class Explorer extends RobotPlayer {
         if (Comms.readOppflagsOriginalLoc(flagID) != 0) {
             return flagLoc;
         } else {
-            if (exploreLoc != null ) {
-                if (MapRecorder.getData(exploreLoc) > 0 || rc.canSenseLocation(exploreLoc)) {
-                    exploreLoc = null;
+            if (flagExploreLoc != null ) {
+                if (MapRecorder.getData(flagExploreLoc) > 0 || rc.canSenseLocation(flagExploreLoc)) {
+                    flagExploreLoc = null;
                 }
             }
             // this gets random target around home base
@@ -37,14 +41,14 @@ public class Explorer extends RobotPlayer {
             int maxY = 15;
             MapLocation baseLoc = flagLoc;
             while (tries-- > 0){
-                if (exploreLoc != null) return exploreLoc;
+                if (flagExploreLoc != null) return flagExploreLoc;
                 int newX = baseLoc.x + (int)(2.0f*FastMath.fakefloat()*maxX - maxX);
                 int newY = baseLoc.y + (int)(2.0f*FastMath.fakefloat()*maxY - maxY);
                 MapLocation newLoc = new MapLocation(newX, newY);
                 if (!rc.onTheMap(newLoc)) continue;
                 if (!rc.canSenseLocation(newLoc)){
                     if (MapRecorder.getData(newLoc) == 0) {
-                        exploreLoc = newLoc;
+                        flagExploreLoc = newLoc;
                         return newLoc;
                     }
                 }
@@ -82,13 +86,16 @@ public class Explorer extends RobotPlayer {
         if (exploreLoc != null && rc.canSenseLocation(exploreLoc)) exploreLoc = null;
         checkExploreLoc();
         if (exploreLoc == null){
-            getEmergencyTarget(15);
+            getEmergencyTarget(25);
         }
         return exploreLoc;
     }
 
     static void checkExploreLoc(){
         if (MapRecorder.getData(exploreLoc) > 0) {
+            exploreLoc = null;
+        } else if (exploreLoc != null &&
+                Robot.getDisToMyClosestSpawnCenter(exploreLoc) > Util.getClosestDis(exploreLoc, Robot.oppSpawnCenters)) {
             exploreLoc = null;
         }
     }

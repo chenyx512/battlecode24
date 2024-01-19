@@ -23,7 +23,7 @@ public class Robot extends RobotPlayer {
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
             SetupManager.initTurn();
         } else {
-            RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache
+            RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache, need to be after specialty
         }
         Cache.initTurn();
         FlagManager.initTurn();

@@ -1,12 +1,7 @@
 package bot1;
 
-import battlecode.common.Clock;
-import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
+import battlecode.common.*;
 import bot1.fast.FastMath;
-
-import java.util.Map;
 
 public class RoleAssigner extends RobotPlayer {
     // -1 for unassigned, 0-2 for friendly flag defense, 3-5 for enemy flag attack
@@ -14,6 +9,15 @@ public class RoleAssigner extends RobotPlayer {
     private static final int MAX_ASSIGNMENT = 15;
 
     public static void initTurn() throws GameActionException {
+        if (Robot.isMaster) {
+            for (int i = 3; --i >= 0;) {
+                int n = Comms.readHqCongestround(i);
+                if (n > 0) {
+                    Comms.writeHqCongestround(i, n - 1);
+                    Debug.setIndicatorDot(Debug.INFO, Robot.mySpawnCenters[i], 255, 0, 255);
+                }
+            }
+        }
         if (!rc.isSpawned()) {
             if (role != -1) {
                 reassign(-1);
@@ -35,6 +39,15 @@ public class RoleAssigner extends RobotPlayer {
                         && rc.senseNearbyFlags(-1, myTeam).length == 0) {
                     Debug.println(Debug.INFO, "flag lost" + Util.int2loc(Comms.readMyflagsOriginalLoc(role)).toString());
                     Comms.writeMyflagsExists(role, 0);
+                }
+            }
+        }
+        if (rc.isSpawned()) {
+            int hqid = Util.getClosestID(Robot.mySpawnCenters);
+            if (rc.getLocation().isAdjacentTo(Robot.mySpawnCenters[hqid])) {
+                int n = rc.senseNearbyRobots(-1, myTeam).length;
+                if (n > 5) {
+                    Comms.writeHqCongestround(hqid, 20);
                 }
             }
         }
@@ -206,27 +219,31 @@ public class RoleAssigner extends RobotPlayer {
         MapLocation bestSpawn = null;
         if (role >= 3 || role == -1) {
             // for offense role, rng to spread out
-            int start = FastMath.rand256();
-            MapLocation[] spawns = rc.getAllySpawnLocations();
-            for (int i = start; i < start + 27; i++) {
-                if (rc.canSpawn(spawns[i % 27])) {
-                    rc.spawn(spawns[i % 27]);
-                }
-            }
+            trySpawn(FastMath.rand256() % 3);
         } else {
             // for defense role, spawn the closest
             MapLocation missionLoc = getRoleLocation();
-            int bestDis = Integer.MAX_VALUE;
-            for (MapLocation loc : rc.getAllySpawnLocations()) {
-                if (rc.canSpawn(loc)) {
-                    int dis =  loc.distanceSquaredTo(missionLoc);
-                    if (dis < bestDis) {
-                        bestDis = dis;
-                        bestSpawn = loc;
-                    }
+            double bestScore = -Double.MAX_VALUE;
+            int bestHQID = -1;
+            for (int i = 3; --i >= 0;) {
+                MapLocation loc = Robot.mySpawnCenters[i];
+                double score = - Math.sqrt(loc.distanceSquaredTo(missionLoc)) - Math.sqrt(Util.getClosestDis(loc, Robot.oppSpawnCenters));
+                score -= 1e5 * Comms.readHqCongestround(i);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestHQID = i;
                 }
             }
-            rc.spawn(bestSpawn);
+            trySpawn(bestHQID);
+        }
+    }
+
+    private static void trySpawn(int hqid) throws GameActionException {
+        for (Direction dir : Constants.ALL_DIRECTIONS) {
+            MapLocation loc = Robot.mySpawnCenters[hqid].add(dir);
+            if (rc.canSpawn(loc)) {
+                rc.spawn(loc);
+            }
         }
     }
 }

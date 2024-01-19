@@ -90,7 +90,7 @@ public class SetupManager extends SpecialtyManager {
     private static double getFlagLocScore(MapLocation loc) {
         double dis2enemy = Math.sqrt(Util.getClosestDis(loc, oppSpawnCenters));
         double dis2hq = Math.sqrt(loc.distanceSquaredTo(flagDest));
-        return dis2enemy - dis2hq;
+        return dis2enemy - 0.8 * dis2hq;
     }
 
     private static int getFlagDistance(int flagid, MapLocation loc) throws GameActionException {

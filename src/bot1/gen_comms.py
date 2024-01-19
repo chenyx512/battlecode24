@@ -19,6 +19,7 @@ SCHEMA = {
         'bits': {
             'loc': 12,
             'dis2next': 8,
+            'congestRound': 5,
         }
     },
     'symmetry': {
