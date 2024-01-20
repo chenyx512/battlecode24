@@ -68,7 +68,7 @@ public class PathFinder extends Robot {
         static DirectionStack dirStack = new DirectionStack();
         static MapLocation prevTarget = null; // previous target
         static int currentTurnDir = 0;
-        static final int MAX_DEPTH = 25;
+        static final int MAX_DEPTH = 20;
         static final int BYTECODE_CUTOFF = 6000;
 
         static Direction turn(Direction dir) {
@@ -89,14 +89,6 @@ public class PathFinder extends Robot {
                 Direction dir = rc.getLocation().directionTo(target);
                 if (canMoveOrFill(dir)) {
                     return dir;
-                }
-                Direction dirL = dir.rotateLeft();
-                if (canMoveOrFill(dirL)) {
-                    return dirL;
-                }
-                Direction dirR = dir.rotateRight();
-                if (canMoveOrFill(dirR)) {
-                    return dirR;
                 }
                 currentTurnDir = getTurnDir(dir);
                 // obstacle encountered, rotate and add new dirs to stack
@@ -157,9 +149,6 @@ public class PathFinder extends Robot {
         }
 
         static int simulate(int turnDir, Direction dir) throws GameActionException {
-            if (rc.getID() == 13149 && rc.getRoundNum() > 460) {
-                int x = 0;
-            }
             MapLocation now = rc.getLocation();
             DirectionStack dirStack = new DirectionStack();
             while (!canPass(now, dir) && dirStack.size < 8) {
@@ -169,34 +158,39 @@ public class PathFinder extends Robot {
             now = now.add(dir);
             int ans = 1;
 
-            while (dirStack.size > 0) {
-                if (ans > MAX_DEPTH) {
+            while (!now.isAdjacentTo(target)) {
+                if (ans > MAX_DEPTH || Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
                     break;
                 }
-                if (Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
-                    return -1;
-                }
-                if (dirStack.size > 1 && canPass(now, dirStack.top(2))) {
-                    dirStack.pop(2);
-                }
-                while (dirStack.size > 0 && canPass(now, dirStack.top())) {
-                    dirStack.pop();
-                }
-
-                while (dirStack.size > 0 && !canPass(now, turn(dirStack.top(), turnDir))) {
-                    dirStack.push(turn(dirStack.top(), turnDir));
-                    if (dirStack.size > 8) {
-                        return -1;
+                Direction moveDir = now.directionTo(target);
+                if (dirStack.size == 0) {
+                    if (!canPass(now, moveDir)) {
+                        // obstacle encountered, rotate and add new dirs to stack
+                        while (!canPass(now, moveDir) && dirStack.size < 8) {
+                            dirStack.push(moveDir);
+                            moveDir = turn(moveDir, turnDir);
+                        }
                     }
+                } else {
+                    if (dirStack.size > 1 && canPass(now, dirStack.top(2))) {
+                        dirStack.pop(2);
+                    }
+                    while (dirStack.size > 0 && canPass(now, dirStack.top())) {
+                        dirStack.pop();
+                    }
+
+                    while (dirStack.size > 0 && !canPass(now, turn(dirStack.top(), turnDir))) {
+                        dirStack.push(turn(dirStack.top(), turnDir));
+                        if (dirStack.size > 8) {
+                            return -1;
+                        }
+                    }
+                    moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top(), turnDir);
                 }
-                if (dirStack.size > 8 || dirStack.size == 0) {
-                    break;
-                }
-                Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top(), turnDir);
                 now = now.add(moveDir);
                 ans++;
             }
-            Debug.setIndicatorDot(Debug.PATHFINDING, now, 255, 0, 0);
+            Debug.setIndicatorDot(Debug.PATHFINDING, now, turnDir == 0? 255 : 0, 0, turnDir == 0? 0 : 255);
             return ans + Util.distance(now, target);
         }
 
@@ -225,7 +219,7 @@ public class PathFinder extends Robot {
             if (!rc.canSenseLocation(loc))
                 return false;
             if (rc.hasFlag()) {
-                if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS && rc.senseRobotAtLocation(loc) != null)
+                if (rc.senseRobotAtLocation(loc) != null)
                     return true;
                 return false;
             }
@@ -240,8 +234,12 @@ public class PathFinder extends Robot {
             MapLocation newLoc = loc.add(targetDir);
             if (!rc.onTheMap(newLoc))
                 return false;
-            if (rc.getLocation().isWithinDistanceSquared(newLoc, GameConstants.VISION_RADIUS_SQUARED)) {
-                return !rc.senseMapInfo(newLoc).isWall();
+            if (rc.canSenseLocation(newLoc)) {
+                if (rc.hasFlag()) {
+                    return rc.sensePassability(newLoc);
+                } else {
+                    return !rc.senseMapInfo(newLoc).isWall();
+                }
             } else {
                 return MapRecorder.getPassible(newLoc);
             }

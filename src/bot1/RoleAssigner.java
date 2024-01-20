@@ -48,6 +48,8 @@ public class RoleAssigner extends RobotPlayer {
                 int n = rc.senseNearbyRobots(-1, myTeam).length;
                 if (n > 5) {
                     Comms.writeHqCongestround(hqid, 20);
+                } else {
+                    Comms.writeHqCongestround(hqid, 0);
                 }
             }
         }
