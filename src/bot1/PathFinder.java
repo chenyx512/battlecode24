@@ -5,6 +5,8 @@ import bot1.fast.*;
 
 public class PathFinder extends Robot {
     private static MapLocation target = null;
+    private static int stuckCnt;
+    private static MapLocation myLastLoc;
 
     static void randomMove() throws GameActionException {
         int starting_i = FastMath.rand256() % Constants.MOVEABLE_DIRECTIONS.length;
@@ -85,6 +87,10 @@ public class PathFinder extends Robot {
                 resetPathfinding();
             }
             prevTarget = target;
+            if (myLastLoc == rc.getLocation()) {
+                stuckCnt++;
+            }
+            myLastLoc = rc.getLocation();
             if (dirStack.size == 0) {
                 Direction dir = rc.getLocation().directionTo(target);
                 if (canMoveOrFill(dir)) {
@@ -210,6 +216,8 @@ public class PathFinder extends Robot {
         // clear some of the previous data
         static void resetPathfinding() {
             dirStack.clear();
+            stuckCnt = 0;
+            myLastLoc = null;
         }
 
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
@@ -220,7 +228,7 @@ public class PathFinder extends Robot {
                 return false;
             if (rc.hasFlag()) {
                 if (rc.senseRobotAtLocation(loc) != null)
-                    return true;
+                    return stuckCnt < 10;
                 return false;
             }
             if (rc.senseMapInfo(loc).isWater() && rc.getCrumbs() > 50)
