@@ -155,9 +155,26 @@ public class FlagManager extends RobotPlayer {
     }
 
     public static int getOppFlagIndex(FlagInfo flag) throws GameActionException {
+        /*
+        index is x + y * W
+        flag ID corresponds to the starting location of the flag
+        broadcast is in order of increasing flag id
+         */
         if (flag.getID() == Comms.readOppflagsId(0)) return 0;
         if (flag.getID() == Comms.readOppflagsId(1)) return 1;
         if (flag.getID() == Comms.readOppflagsId(2)) return 2;
+        // get the gameworld id of opponent spawn centers
+        int s0 = Robot.oppSpawnCenters[0].x + Robot.oppSpawnCenters[0].y * W;
+        int s1 = Robot.oppSpawnCenters[1].x + Robot.oppSpawnCenters[1].y * W;
+        int s2 = Robot.oppSpawnCenters[2].x + Robot.oppSpawnCenters[2].y * W;
+        if (s0 > s1) {int tmp=s0; s0=s1; s1=tmp;}
+        if (s1 > s2) {int tmp=s1; s1=s2; s2=tmp;}
+        if (s0 > s1) {int tmp=s0; s0=s1; s1=tmp;}
+        if (s1 > s2) {int tmp=s1; s1=s2; s2=tmp;}
+        if (flag.getID() == s0) return 0;
+        if (flag.getID() == s1) return 1;
+        if (flag.getID() == s2) return 2;
+        Debug.println(String.format("WARNING, unmatched flag id %d at %s, s0=%d s1=%d s2=%d", flag.getID(), flag.getLocation().toString(), s0, s1, s2));
         // it is an unregistered flag, register it to the closest broadcast location
         int bestIndex = -1;
         int bestDis = Integer.MAX_VALUE;

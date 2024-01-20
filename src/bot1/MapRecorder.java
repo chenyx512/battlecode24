@@ -81,9 +81,9 @@ public class MapRecorder extends RobotPlayer {
     }
 
     private static void eliminateSym(int sym, MapLocation loc) throws GameActionException {
-        symmetry |= sym;
-        Comms.writeSymmetrySym(symmetry);
+        Comms.writeSymmetrySym(symmetry | sym);
         Comms.push();
+        updateSym();
         Debug.println(Debug.INFO, String.format("eliminate sym %d at %d %d now sym=%d", sym, loc.x, loc.y, symmetry));
     }
 
