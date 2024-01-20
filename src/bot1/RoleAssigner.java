@@ -34,7 +34,6 @@ public class RoleAssigner extends RobotPlayer {
                 // distress if I can't see the flag
                 if (!rc.canSenseLocation(flagLoc)) {
                     Comms.writeMyflagsDistress(role, 1);
-                    Debug.println(Debug.INFO, "flag distress due to not seen" + flagLoc.toString());
                 } else if (Comms.readMyflagsOriginalLoc(role) == Comms.readMyflagsLoc(role)
                         && rc.senseNearbyFlags(-1, myTeam).length == 0) {
                     Debug.println(Debug.INFO, "flag lost" + Util.int2loc(Comms.readMyflagsOriginalLoc(role)).toString());

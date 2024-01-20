@@ -15,9 +15,6 @@ public class Explorer extends RobotPlayer {
             if (exploreLoc != null) return;
             MapLocation newLoc = new MapLocation((int)(FastMath.fakefloat()*maxX), (int)(FastMath.fakefloat()*maxY));
             //if (checkDanger && Robot.comm.isEnemyTerritoryRadial(newLoc)) continue;
-            if (Robot.getDisToMyClosestSpawnCenter(newLoc) > Util.getClosestDis(newLoc, Robot.oppSpawnCenters)) {
-                continue;
-            }
             if (!rc.canSenseLocation(newLoc)){
                 if (MapRecorder.getData(newLoc) == 0) {
                     exploreLoc = newLoc;
@@ -28,6 +25,9 @@ public class Explorer extends RobotPlayer {
 
     public static MapLocation getFlagTarget(int flagID, int tries) throws GameActionException {
         MapLocation flagLoc = Util.int2loc(Comms.readOppflagsLoc(flagID));
+        if (flagExploreLoc == null) {
+            flagExploreLoc = flagLoc;
+        }
         if (Comms.readOppflagsOriginalLoc(flagID) != 0) {
             return flagLoc;
         } else {
@@ -80,7 +80,7 @@ public class Explorer extends RobotPlayer {
     }
 
 
-    public static MapLocation getUnseenExploreTarget() {
+    public static MapLocation getUnseenExploreTarget() throws GameActionException {
         /* Pick a random target that is not recorded yet
         * */
         if (exploreLoc != null && rc.canSenseLocation(exploreLoc)) exploreLoc = null;
@@ -91,12 +91,17 @@ public class Explorer extends RobotPlayer {
         return exploreLoc;
     }
 
-    static void checkExploreLoc(){
+    static void checkExploreLoc() throws GameActionException {
         if (MapRecorder.getData(exploreLoc) > 0) {
             exploreLoc = null;
-        } else if (exploreLoc != null &&
-                Robot.getDisToMyClosestSpawnCenter(exploreLoc) > Util.getClosestDis(exploreLoc, Robot.oppSpawnCenters)) {
-            exploreLoc = null;
+        } else if (exploreLoc != null) {
+            for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {
+                MapLocation loc = rc.getLocation().add(dir);
+                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isDam()) {
+                    exploreLoc = null;
+                    return;
+                }
+            }
         }
     }
 
