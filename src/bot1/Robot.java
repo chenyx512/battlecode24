@@ -9,7 +9,6 @@ public class Robot extends RobotPlayer {
     public static MapLocation homeSpawn;
 
     public static int baseHeal = SkillType.HEAL.skillEffect;
-    public static int attackHP, healHP;
     public static boolean isMaster = false;
 
     static void init() throws GameActionException {
@@ -27,10 +26,6 @@ public class Robot extends RobotPlayer {
         }
         Cache.initTurn();
         FlagManager.initTurn();
-
-        // updates self stats
-        attackHP = Math.round(SkillType.ATTACK.skillEffect * ((float) SkillType.ATTACK.getSkillEffect(rc.getLevel(SkillType.ATTACK)) / 100 + 1));
-        healHP = Math.round(baseHeal * ((float) SkillType.HEAL.getSkillEffect(rc.getLevel(SkillType.HEAL)) / 100 + 1));
 
         if (rc.isSpawned()) {
             if (rc.canBuyGlobal(GlobalUpgrade.ATTACK)) {

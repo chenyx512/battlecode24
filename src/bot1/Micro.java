@@ -3,12 +3,16 @@ package bot1;
 import battlecode.common.*;
 import bot1.fast.*;
 
-import java.util.Map;
-import java.util.function.ToDoubleFunction;
-
 public class Micro extends Robot {
+    private static final int STATE_OFFENSIVE = 1;
+    private static final int STATE_HOLDING = 2;
+    private static final int STATE_DEFENSIVE = 3;
+    private static final int STATE_BUILDING = 4;
+    private static int state;
+
     private static MicroDirection bestMicro;
-    private static boolean playSafe = false;
+    private static boolean shouldPlanStepAttack;
+    private static int myTotalStrength, oppTotalStrength;
 
     static boolean act() throws GameActionException {
         // assumptions
@@ -20,28 +24,21 @@ public class Micro extends Robot {
             return false;
         }
 
-        playSafe = false;
         if (Cache.nearbyEnemies.length == 0) {
             tryHeal();
-            if (rc.isActionReady() && Cache.allyToHeal && SpecialtyManager.isHealer()) {
-                playSafe = true;
-                bestMicro = getBestMicro();
-                tryMove(bestMicro.dir);
+            if (Cache.allyToHeal && SpecialtyManager.isHealer()) {
+                PathFinder.move(Cache.healingTarget.location);
                 tryHeal();
+                return true;
             }
             return false;
         } else {
-            if (getDisToMyClosestSpawnCenter(rc.getLocation()) > 200 && rc.getHealth() <= 750)
-                playSafe = true;
-            if ((SpecialtyManager.healLevel > 2 || SpecialtyManager.attackLevel > 0) && rc.getHealth() <= 750)
-                playSafe = true;
             tryAttack();
             bestMicro = getBestMicro();
             if (bestMicro.canAttack == 0 &&
                     (SpecialtyManager.isBuilder() || (rc.getCrumbs() > 2000 && rc.getRoundNum() > 300 && Cache.nearbyEnemies.length > 5)))
                 tryDropTrap();
             tryMove(bestMicro.dir);
-            Debug.printString(String.format("h%d dh%d", bestMicro.canHeal, bestMicro.disToHealer));
             tryAttack();
             if (bestMicro.numAttackRangeNext == 0 || (bestMicro.allyCloseCnt > 0 || SpecialtyManager.isHealer())) {
                 tryHeal();
@@ -51,6 +48,14 @@ public class Micro extends Robot {
     }
 
     private static MicroDirection getBestMicro() throws GameActionException {
+        oppTotalStrength = 0;
+        myTotalStrength = rc.getHealth();
+        // we should plan step attack if we can attack next turn
+        shouldPlanStepAttack = false;
+        if (rc.getActionCooldownTurns() < 20) {
+            shouldPlanStepAttack = true;
+        }
+
         MicroDirection[] micros = new MicroDirection[9];
         for (int i = 9; --i >= 0;)
             micros[i] = new MicroDirection(Constants.ALL_DIRECTIONS[i]);
@@ -58,6 +63,7 @@ public class Micro extends Robot {
         for (int i = enemies.length;
              --i >= 0 && Clock.getBytecodesLeft() >= Constants.MICRO_MIN_BYTECODE_REMAINING;) {
             RobotInfo enemy = enemies[i];
+            oppTotalStrength += enemy.health;
             micros[0].updateEnemy(enemy);
             micros[1].updateEnemy(enemy);
             micros[2].updateEnemy(enemy);
@@ -72,6 +78,7 @@ public class Micro extends Robot {
         for (int i = allies.length;
              --i >= 0 && Clock.getBytecodesLeft() >= Constants.MICRO_MIN_BYTECODE_REMAINING;) {
             RobotInfo ally = allies[i];
+            myTotalStrength += ally.health;
             micros[0].updateAlly(ally);
             micros[1].updateAlly(ally);
             micros[2].updateAlly(ally);
@@ -82,6 +89,17 @@ public class Micro extends Robot {
             micros[7].updateAlly(ally);
             micros[8].updateAlly(ally);
         }
+        if (rc.getHealth() < 750) {
+            state = STATE_DEFENSIVE;
+        } else if (SpecialtyManager.isBuilder()) {
+            state = STATE_BUILDING;
+        } else if (myTotalStrength <= oppTotalStrength + 1000) {
+            state = STATE_DEFENSIVE;
+        } else {
+            state = STATE_OFFENSIVE;
+        }
+        Debug.printString(Debug.MICRO, "micro" + state);
+
         MicroDirection micro = micros[8];
         for (int i = 0; i < 8; ++i) {
             if (micros[i].isBetterThan(micro)) micro = micros[i];
@@ -195,10 +213,10 @@ public class Micro extends Robot {
         return score;
     }
 
-    static double getHealingTargetScore(RobotInfo r) {
+    public static double getHealingTargetScore(RobotInfo r) {
         if (r.health == GameConstants.DEFAULT_HEALTH)
             return -1e9;
-        double score = getRobotScore(r) / r.getHealth();
+        double score = getRobotScore(r);
         if (!SpecialtyManager.isHealer(r))
             score += 1e5; // prioritize non-healers, since they always more important
         return score;
@@ -206,12 +224,12 @@ public class Micro extends Robot {
 
     static double getAttackTargetScore(RobotInfo r) {
         double score = 0;
-        if (r.health <= attackHP) // prioritize anything we can kill
+        if (r.health <= rc.getAttackDamage()) // prioritize anything we can kill
             score += 1e9;
         if (r.hasFlag()) {
             score += 1e8;
         }
-        int timeToKill = (r.getHealth() + attackHP - 1) / attackHP;
+        int timeToKill = (r.getHealth() + rc.getAttackDamage() - 1) / rc.getAttackDamage();
         score += getRobotScore(r) / timeToKill;
         return score;
     }
@@ -285,7 +303,7 @@ public class Micro extends Robot {
         int minDistanceToEnemy = 99999999;
         int minDistanceToAlly = 99999999;
         int builderDis = 99999999;
-        int canHeal;
+        int canHealPriority;
         int disToHealer = 9999999;
         MapLocation closestEnemyLoc;
 
@@ -309,7 +327,7 @@ public class Micro extends Robot {
                 numAttackRange++;
                 if (rc.isActionReady()) {
                     canAttack = 1;
-                    if (enemy.health <= attackHP || enemy.hasFlag)
+                    if (enemy.health <= rc.getAttackDamage())
                         canKill = 1;
                 }
             }
@@ -329,7 +347,7 @@ public class Micro extends Robot {
                 allyWithinBlastRange++;
             if (rc.getHealth() < 800 || ally.getHealth() < 800) {
                 if (dis <= GameConstants.HEAL_RADIUS_SQUARED) {
-                    canHeal = 1;
+                    canHealPriority = 1;
                 }
                 if (dis < disToHealer)
                     disToHealer = dis;
@@ -343,42 +361,69 @@ public class Micro extends Robot {
         }
 
         boolean isBetterThan(MicroDirection other) {
-            if (SpecialtyManager.isBuilder()) {
-                // play safe as builder
-                if (canMove != other.canMove) return canMove > other.canMove;
-                if (numAttackRange - canKill != other.numAttackRange - other.canKill)
-                    return numAttackRange - canKill < other.numAttackRange - other.canKill;
-                if (canKill != other.canKill)
-                    return canKill > other.canKill;
-                if (canAttack != other.canAttack)
-                    return canAttack > other.canAttack;
-                if (numAttackRangeNext != other.numAttackRangeNext) {
-                    return numAttackRangeNext < other.numAttackRangeNext;
-                }
-                if (builderDis != other.builderDis)
-                    return builderDis > other.builderDis;
-                if (minDistanceToAlly != other.minDistanceToAlly)
-                    return minDistanceToAlly < other.minDistanceToAlly;
-                return minDistanceToEnemy <= other.minDistanceToEnemy;
-            } else if (playSafe) {
-                // healing oriented
-                if (canMove != other.canMove) return canMove > other.canMove;
-                if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
-                    return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
-                if (numAttackRangeNext - canKill != other.numAttackRangeNext - other.canKill) {
-                    return numAttackRangeNext - canKill < other.numAttackRangeNext - other.canKill;
-                }
-                if (canAttack != other.canAttack)
-                    return canAttack > other.canAttack;
-                if (canKill != other.canKill)
-                    return canKill > other.canKill;
-                if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
-                    if (canHeal != other.canHeal)
-                        return canHeal > other.canHeal;
-                    return disToHealer <= other.disToHealer;
-                }
-                return minDistanceToEnemy >= other.minDistanceToEnemy;
-            } else {
+            switch (state) {
+                case STATE_BUILDING:
+                    // play safe as builder
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    if (numAttackRange - canKill != other.numAttackRange - other.canKill)
+                        return numAttackRange - canKill < other.numAttackRange - other.canKill;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (numAttackRangeNext != other.numAttackRangeNext) {
+                        return numAttackRangeNext < other.numAttackRangeNext;
+                    }
+                    if (builderDis != other.builderDis)
+                        return builderDis > other.builderDis;
+                    if (minDistanceToAlly != other.minDistanceToAlly)
+                        return minDistanceToAlly < other.minDistanceToAlly;
+                    return minDistanceToEnemy <= other.minDistanceToEnemy;
+
+                case STATE_DEFENSIVE:
+                    // play safe
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                        return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                    if (numAttackRangeNext - canKill != other.numAttackRangeNext - other.canKill) {
+                        return numAttackRangeNext - canKill < other.numAttackRangeNext - other.canKill;
+                    }
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
+                    if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
+                        if (canHealPriority != other.canHealPriority)
+                            return canHealPriority > other.canHealPriority;
+                        return disToHealer <= other.disToHealer;
+                    }
+
+                case STATE_HOLDING:
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    // if can step attack anyone, do it
+                    if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                        return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                    if (numAttackRangeNext - canAttack != other.numAttackRangeNext - other.canAttack)
+                        return numAttackRangeNext - canAttack < other.numAttackRangeNext - other.canAttack;
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
+                    // otherwise hold your ground
+                    if (numAttackRangeNext != other.numAttackRangeNext)
+                        return numAttackRangeNext < other.numAttackRangeNext;
+                    // try to find someone I can heal while keeping enemy close
+                    if (rc.isActionReady()) {
+                        // If I can heal someone rn, always do it
+                        if (canHealPriority != other.canHealPriority)
+                            return canHealPriority > other.canHealPriority;
+                    }
+                    if (numAttackRangeNext > 0) {
+                        return minDistanceToEnemy >= other.minDistanceToEnemy;
+                    }
+                    return minDistanceToEnemy <= other.minDistanceToEnemy;
+
+                case STATE_OFFENSIVE:
                     if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
@@ -387,7 +432,7 @@ public class Micro extends Robot {
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
 
-                    if (rc.getActionCooldownTurns() < 20) {
+                    if (shouldPlanStepAttack) {
                         // if can attack next turn, want to have as few target as possible, but at least 1
                         if (numAttackRangeNext != other.numAttackRangeNext) {
                             if (numAttackRangeNext == 0) return false;
@@ -397,20 +442,13 @@ public class Micro extends Robot {
                     } else if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
                     }
-                    if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
-                        if (canHeal != other.canHeal)
-                            return canHeal > other.canHeal;
-                        return disToHealer <= other.disToHealer;
-                    }
-
-                    if (allyWithinBlastRange != other.allyWithinBlastRange)
-                        return allyWithinBlastRange < other.allyWithinBlastRange;
-
-                    if (minDistanceToEnemy < GameConstants.ATTACK_RADIUS_SQUARED) {
-                        return minDistanceToEnemy >= other.minDistanceToEnemy;
+                    if (allyCloseCnt != other.allyCloseCnt) {
+                        return allyCloseCnt > other.allyCloseCnt;
                     }
                     return minDistanceToEnemy <= other.minDistanceToEnemy;
             }
+            Debug.failFast("impossible micro state");
+            return false;
         }
     }
 }

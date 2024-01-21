@@ -7,6 +7,8 @@ public class SpecialtyManager extends Robot {
     private static char[] duckID2seq = Constants.STRING_LEN_4200.toCharArray();
     private static int seqIDcnt;
     public static int buildLevel, attackLevel, healLevel;
+    public static int attackCD, healCD;
+    public static int oppAttackBase = SkillType.ATTACK.skillEffect;
 
     public static boolean isBuilder() {
         return duckSeqID > 0 && duckSeqID <= Constants.NUM_BUILDER;
@@ -34,12 +36,17 @@ public class SpecialtyManager extends Robot {
         return true;
     }
 
+    public static int getAttackDamage(RobotInfo r) {
+        return Math.round(oppAttackBase * ((float) SkillType.ATTACK.getSkillEffect(r.getAttackLevel()) / 100 + 1));
+    }
+
     public static boolean act() throws GameActionException {
         if (!isBuilder()) {
-            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
-                return false;
-            if (buildLevel >= 3)
-                return false;
+//            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
+//                return false;
+//            if (buildLevel >= 3)
+//                return false;
+            return false;
         }
         if (buildLevel == 6)
             return false;
@@ -66,6 +73,12 @@ public class SpecialtyManager extends Robot {
         buildLevel = rc.getLevel(SkillType.BUILD);
         attackLevel = rc.getLevel(SkillType.ATTACK);
         healLevel = rc.getLevel(SkillType.HEAL);
+        GlobalUpgrade[] oppUpgrades = rc.getGlobalUpgrades(oppTeam);
+        for (GlobalUpgrade upgrade: oppUpgrades) {
+            if (upgrade == GlobalUpgrade.ATTACK) oppAttackBase = SkillType.ATTACK.skillEffect + upgrade.baseAttackChange;
+        }
+        attackCD = (int) Math.round(GameConstants.ATTACK_COOLDOWN*(1+.01*SkillType.ATTACK.getCooldown(attackLevel)));
+        healCD = (int) Math.round((int) Math.round(GameConstants.HEAL_COOLDOWN*(1+.01*SkillType.HEAL.getCooldown(healLevel))));
 
         if (duckSeqID == 0) {
             duckSeqID = Comms.readSyncId() + 1;
