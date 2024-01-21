@@ -147,16 +147,16 @@ public class Micro extends Robot {
 //        if (canStun && Cache.nearbyFriends.length > 5 && rc.canBuild(TrapType.STUN, loc)) {
 //            rc.build(TrapType.STUN, loc);
 //        }
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
+        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+            rc.build(TrapType.STUN, loc);
         }
         loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
+        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+            rc.build(TrapType.STUN, loc);
         }
         loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
+        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+            rc.build(TrapType.STUN, loc);
         }
     }
 
