@@ -59,6 +59,16 @@ public class FlagManager extends RobotPlayer {
                 }
             }
         }
+        if (Robot.isMaster){
+            for (int i = 3; --i >=0;) {
+                if (Comms.readMyflagsExists(i) == 1){
+                    Comms.writeMyflagsDistressCounter(i, Comms.readMyflagsDistressCounter(i) + 1);
+                }
+                if (Comms.readMyflagsDistressCounter(i) > 100){
+                    Comms.writeMyflagsExists(i, 0);
+                }
+            }
+        }
     }
 
     public static boolean act() throws GameActionException {
@@ -70,6 +80,7 @@ public class FlagManager extends RobotPlayer {
                 int flagIndex = getMyFlagIndex(flag);
                 Comms.writeMyflagsExists(flagIndex, 1);
                 Comms.writeMyflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
+                Comms.writeMyflagsDistressCounter(flagIndex, 0);
                 myFlagSeen[flagIndex] = true;
                 if ((flag.isPickedUp() && rc.getRoundNum() > 200)
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
