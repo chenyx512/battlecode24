@@ -120,6 +120,9 @@ public class Micro extends Robot {
             }
         }
         if (bestTarget != null && rc.canAttack(bestTarget.location)) {
+            if (bestTarget.health <= rc.getAttackDamage()) {
+                KillRecorder.recordKill();
+            }
             rc.attack(bestTarget.location);
             if (rc.isActionReady())
                 tryAttack();
@@ -127,6 +130,8 @@ public class Micro extends Robot {
     }
 
     private static void tryDropTrap() throws GameActionException {
+        if (!Constants.USE_TRAP)
+            return;
         if (!rc.isActionReady() || Cache.closestEnemy == null)
             return;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);

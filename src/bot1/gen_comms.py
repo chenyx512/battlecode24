@@ -51,6 +51,18 @@ SCHEMA = {
             'carried': 1,
             'assigned': 6,
         }
+    },
+    'myTeam': {
+        'slots': 1,
+        'bits': {
+            'cnt': 6,
+        }
+    },
+    'oppTeam': {
+        'slots': 1,
+        'bits': {
+            'cnt': 6,
+        }
     }
 }
 

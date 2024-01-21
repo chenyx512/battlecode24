@@ -41,6 +41,7 @@ public class Constants {
 
     public static final int MICRO_MIN_BYTECODE_REMAINING = 10000;
 
-    public static final int NUM_BUILDER = 3;
+    public static final boolean USE_TRAP = false;
+    public static final int NUM_BUILDER = USE_TRAP? 3 : 0;
     public static final int NUM_HEALER = 33;
 }

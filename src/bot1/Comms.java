@@ -13,6 +13,8 @@ public class Comms extends RobotPlayer {
     public final static int SYMMETRY_SLOTS = 1;
     public final static int MYFLAGS_SLOTS = 3;
     public final static int OPPFLAGS_SLOTS = 3;
+    public final static int MYTEAM_SLOTS = 1;
+    public final static int OPPTEAM_SLOTS = 1;
 
     public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
@@ -698,6 +700,24 @@ public class Comms extends RobotPlayer {
             default:
                 Debug.failFast("Comm write param not in range"); 
         }
+    }
+
+    public static int readMyteamCnt() throws GameActionException {
+        return (buf24 & 63);
+    }
+
+    public static void writeMyteamCnt(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
+        buf24 = (buf24 & 65472) | (value);
+        dirty24 = 1;
+    }
+
+    public static int readOppteamCnt() throws GameActionException {
+        return (buf25 & 64512) >>> 10;
+    }
+
+    public static void writeOppteamCnt(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
+        buf25 = (buf25 & 1023) | (value << 10);
+        dirty25 = 1;
     }
 
     // BUFFER POOL READ AND WRITE METHODS

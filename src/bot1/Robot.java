@@ -12,7 +12,7 @@ public class Robot extends RobotPlayer {
     public static boolean isMaster = false;
 
     static void init() throws GameActionException {
-        initHQLocs(); // also the flag manager
+        initHQLocs(); // also the flag manager and KillRecorder inits
     }
 
     static void initTurn() throws GameActionException {
@@ -26,6 +26,7 @@ public class Robot extends RobotPlayer {
         }
         Cache.initTurn();
         FlagManager.initTurn();
+        KillRecorder.initTurn();
 
         if (rc.isSpawned()) {
             if (rc.canBuyGlobal(GlobalUpgrade.ATTACK)) {
@@ -134,9 +135,10 @@ public class Robot extends RobotPlayer {
                 mySpawnCenters[i] = new MapLocation(sumX / 9, sumY / 9);
                 Comms.writeHqLoc(i, Util.loc2int(mySpawnCenters[i]));
                 Debug.println(Debug.INFO, String.format("HQ %d: %d %d", i, sumX / 9, sumY / 9));
-                isMaster = true;
             }
+            isMaster = true;
             FlagManager.init();
+            KillRecorder.init();
             Comms.push();
         } else {
             for (int i = 3; --i >= 0; ) {
