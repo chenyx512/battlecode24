@@ -36,10 +36,11 @@ public class SpecialtyManager extends Robot {
 
     public static boolean act() throws GameActionException {
         if (!isBuilder()) {
-            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
-                return false;
-            if (buildLevel >= 3)
-                return false;
+            return false;
+//            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
+//                return false;
+//            if (buildLevel >= 3)
+//                return false;
         }
         if (buildLevel == 6)
             return false;

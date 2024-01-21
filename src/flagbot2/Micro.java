@@ -109,14 +109,14 @@ public class Micro extends Robot {
     }
 
     private static void tryDropTrap() throws GameActionException {
-        if (!rc.isActionReady() || Cache.closestEnemy == null)
-            return;
-        Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
-        MapLocation loc = rc.getLocation().add(dir);
-        MapLocation nextLoc = loc.add(dir);
-        // avoid dropping trap when there is obstacle in between
-        if (rc.canSenseLocation(nextLoc) && rc.senseMapInfo(nextLoc).isWall())
-            return;
+//        if (!rc.isActionReady() || Cache.closestEnemy == null)
+//            return;
+//        Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
+//        MapLocation loc = rc.getLocation().add(dir);
+//        MapLocation nextLoc = loc.add(dir);
+//        // avoid dropping trap when there is obstacle in between
+//        if (rc.canSenseLocation(nextLoc) && rc.senseMapInfo(nextLoc).isWall())
+//            return;
         // stun is pretty hard to mix rn, leaving out
 //        boolean canStun = true;
 //        for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
@@ -129,17 +129,17 @@ public class Micro extends Robot {
 //        if (canStun && Cache.nearbyFriends.length > 5 && rc.canBuild(TrapType.STUN, loc)) {
 //            rc.build(TrapType.STUN, loc);
 //        }
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
-        }
-        loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
-        }
-        loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.EXPLOSIVE, loc);
-        }
+//        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+//            rc.build(TrapType.EXPLOSIVE, loc);
+//        }
+//        loc = rc.getLocation().add(dir.rotateLeft());
+//        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+//            rc.build(TrapType.EXPLOSIVE, loc);
+//        }
+//        loc = rc.getLocation().add(dir.rotateLeft());
+//        if (rc.canBuild(TrapType.EXPLOSIVE, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+//            rc.build(TrapType.EXPLOSIVE, loc);
+//        }
     }
 
     private static void tryHeal() throws GameActionException {
