@@ -1,4 +1,4 @@
-package bot1;
+package SPRINT2;
 
 import battlecode.common.Direction;
 

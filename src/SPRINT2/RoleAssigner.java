@@ -1,7 +1,7 @@
-package bot1;
+package SPRINT2;
 
 import battlecode.common.*;
-import bot1.fast.FastMath;
+import SPRINT2.fast.FastMath;
 
 public class RoleAssigner extends RobotPlayer {
     // -1 for unassigned, 0-2 for friendly flag defense, 3-5 for enemy flag attack
