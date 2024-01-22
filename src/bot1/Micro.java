@@ -89,11 +89,12 @@ public class Micro extends Robot {
             micros[7].updateAlly(ally);
             micros[8].updateAlly(ally);
         }
-        int bar = 550;
-        if (rc.getHealth() < bar) {
+        if (rc.getHealth() < 450) {
             state = STATE_DEFENSIVE;
         } else if (SpecialtyManager.isBuilder()) {
             state = STATE_BUILDING;
+        } else if (rc.getHealth() < 700) {
+            state = STATE_HOLDING;
         } else {
             state = STATE_OFFENSIVE;
         }
@@ -120,6 +121,9 @@ public class Micro extends Robot {
         }
         if (bestTarget != null && rc.canAttack(bestTarget.location)) {
             rc.attack(bestTarget.location);
+            if (bestTarget.health <= rc.getAttackDamage()) {
+                KillRecorder.recordKill();
+            }
             if (rc.isActionReady())
                 tryAttack();
         }
@@ -327,7 +331,7 @@ public class Micro extends Robot {
                 numAttackRange++;
                 if (rc.isActionReady() && needFill == 0) {
                     canAttack = 1;
-                    if (enemy.health <= rc.getAttackDamage())
+                    if (enemy.health <= rc.getAttackDamage() || enemy.hasFlag)
                         canKill = 1;
                 }
             }
@@ -408,6 +412,31 @@ public class Micro extends Robot {
                     if (minDistanceToAlly != other.minDistanceToAlly)
                         return minDistanceToAlly < other.minDistanceToAlly;
                     return minDistanceToEnemy >= other.minDistanceToEnemy;
+
+                case STATE_HOLDING:
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                        return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
+                    if (numAttackRangeNext != other.numAttackRangeNext) {
+                        return numAttackRangeNext < other.numAttackRangeNext;
+                    }
+                    if (canHealHigh != other.canHealHigh)
+                        return canHealHigh > other.canHealHigh;
+                    if (canHealLow != other.canHealLow)
+                        return canHealLow > other.canHealLow;
+                    if (disToHealerHigh != other.disToHealerHigh)
+                        return disToHealerHigh < other.disToHealerHigh;
+                    if (disToHealer != other.disToHealer)
+                        return disToHealer < other.disToHealer;
+                    if (allyCloseCnt != other.allyCloseCnt) {
+                        return allyCloseCnt > other.allyCloseCnt;
+                    }
+                    return minDistanceToEnemy <= other.minDistanceToEnemy;
+
 
                 case STATE_OFFENSIVE:
                     if (canMove != other.canMove) return canMove > other.canMove;

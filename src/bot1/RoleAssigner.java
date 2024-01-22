@@ -50,8 +50,8 @@ public class RoleAssigner extends RobotPlayer {
             int hqid = Util.getClosestID(Robot.mySpawnCenters);
             if (rc.getLocation().isAdjacentTo(Robot.mySpawnCenters[hqid])) {
                 int n = rc.senseNearbyRobots(-1, myTeam).length;
-                if (n > 5) {
-                    Comms.writeHqCongestround(hqid, 20);
+                if (n > 8) {
+                    Comms.writeHqCongestround(hqid, 15);
                 } else {
                     Comms.writeHqCongestround(hqid, 0);
                 }
@@ -234,7 +234,7 @@ public class RoleAssigner extends RobotPlayer {
             for (int i = 3; --i >= 0;) {
                 MapLocation loc = Robot.mySpawnCenters[i];
                 double score = - Math.sqrt(loc.distanceSquaredTo(missionLoc)) - Math.sqrt(Util.getClosestDis(loc, Robot.oppSpawnCenters));
-//                score -= 1e5 * Comms.readHqCongestround(i);
+                score -= 1e5 * Comms.readHqCongestround(i);
                 if (score > bestScore) {
                     bestScore = score;
                     bestHQID = i;

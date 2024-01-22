@@ -63,7 +63,13 @@ SCHEMA = {
         'bits': {
             'cnt': 6,
         }
-    }
+    },
+    'enemy': {
+        'slots': 3,
+        'bits': {
+            'loc': 12,
+        }
+    },
 }
 
 def gen_constants():

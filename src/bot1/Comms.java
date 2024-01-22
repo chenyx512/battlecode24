@@ -15,6 +15,7 @@ public class Comms extends RobotPlayer {
     public final static int OPPFLAGS_SLOTS = 3;
     public final static int MYTEAM_SLOTS = 1;
     public final static int OPPTEAM_SLOTS = 1;
+    public final static int ENEMY_SLOTS = 3;
 
     public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
@@ -718,6 +719,39 @@ public class Comms extends RobotPlayer {
     public static void writeOppteamCnt(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
         buf25 = (buf25 & 1023) | (value << 10);
         dirty25 = 1;
+    }
+
+    public static int readEnemyLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf25 & 1023) << 2) + ((buf26 & 49152) >>> 14);
+            case 1: return (buf26 & 16380) >>> 2;
+            case 2: return ((buf26 & 3) << 10) + ((buf27 & 65472) >>> 6);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeEnemyLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf25 = (buf25 & 64512) | ((value & 4092) >>> 2);
+                dirty25 = 1;
+                buf26 = (buf26 & 16383) | ((value & 3) << 14);
+                dirty26 = 1;
+                break;
+            case 1:
+                buf26 = (buf26 & 49155) | (value << 2);
+                dirty26 = 1;
+                break;
+            case 2:
+                buf26 = (buf26 & 65532) | ((value & 3072) >>> 10);
+                dirty26 = 1;
+                buf27 = (buf27 & 63) | ((value & 1023) << 6);
+                dirty27 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
     }
 
     // BUFFER POOL READ AND WRITE METHODS

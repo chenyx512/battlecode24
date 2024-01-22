@@ -30,11 +30,15 @@ public class KillRecorder extends RobotPlayer {
             killCnt[roundNo] = 0;
         }
         cntDiff = Comms.readMyteamCnt() - Comms.readOppteamCnt();
-        // TODO off by one may cause count to go under 0
     }
 
     public static void recordKill() throws GameActionException {
-        killCnt[roundNo]++;
-        Comms.writeOppteamCnt(Comms.readOppteamCnt() - 1);
+        int oppCnt = Comms.readOppteamCnt() - 1;
+        if (oppCnt >= 0) {
+            // it's possible that opp count drops below zero cuz round number may be off by one
+            // in this case we just don't record this kill
+            killCnt[roundNo]++;
+            Comms.writeOppteamCnt(oppCnt);
+        }
     }
 }

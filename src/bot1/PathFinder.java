@@ -242,9 +242,12 @@ public class PathFinder extends Robot {
                     return stuckCnt < 10;
                 return false;
             }
-            if (rc.senseMapInfo(loc).isDam())
+            MapInfo info = rc.senseMapInfo(loc);
+            if (info.isDam())
                 return true;
-            if (rc.senseMapInfo(loc).isWater()) {
+            if (info.isWater()) {
+                if (info.getCrumbs() > 0)
+                    return true;
                 if (rc.getCrumbs() < 200 || rc.getRoundNum() <= 150)
                     return false;
                 int wall_cnt = 0;

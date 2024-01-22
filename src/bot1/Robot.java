@@ -26,6 +26,8 @@ public class Robot extends RobotPlayer {
         }
         Cache.initTurn();
         FlagManager.initTurn();
+        KillRecorder.initTurn();
+//        EnemyTracker.initTurn(); // needs to be after Cache
 
         if (rc.isSpawned()) {
             if (rc.canBuyGlobal(GlobalUpgrade.ATTACK)) {
@@ -82,6 +84,8 @@ public class Robot extends RobotPlayer {
             MapLocation target = Explorer.getUnseenExploreTarget();
             PathFinder.move(target);
         }  else {
+//            if (EnemyTracker.act())
+//                return;
             RoleAssigner.act();
         }
     }
@@ -137,6 +141,7 @@ public class Robot extends RobotPlayer {
             }
             isMaster = true;
             FlagManager.init();
+            KillRecorder.init();
             Comms.push();
         } else {
             for (int i = 3; --i >= 0; ) {
