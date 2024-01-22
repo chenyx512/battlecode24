@@ -91,9 +91,7 @@ public class Micro extends Robot {
         }
         if (rc.getHealth() < 450) {
             state = STATE_DEFENSIVE;
-        } else if (SpecialtyManager.isBuilder()) {
-            state = STATE_BUILDING;
-        } else if (rc.getHealth() < 700) {
+        }  else if (rc.getHealth() < 700 || SpecialtyManager.isBuilder()) {
             state = STATE_HOLDING;
         } else {
             state = STATE_OFFENSIVE;

@@ -1,8 +1,6 @@
 package noduckonflag;
 
-import battlecode.common.FlagInfo;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
+import battlecode.common.*;
 
 public class FlagManager extends RobotPlayer {
     public static boolean urgent;
@@ -118,6 +116,16 @@ public class FlagManager extends RobotPlayer {
                 flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
             } else {
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
+            }
+            // If I am stuck in water, call for help
+            int nonpassiblecnt = 0;
+            for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {
+                MapLocation loc = rc.getLocation().add(dir);
+                if (!rc.canSenseLocation(loc) || !rc.sensePassability(loc))
+                    nonpassiblecnt++;
+            }
+            if (nonpassiblecnt > 3) {
+                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             }
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));

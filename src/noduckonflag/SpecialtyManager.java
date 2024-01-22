@@ -31,7 +31,8 @@ public class SpecialtyManager extends Robot {
     }
 
     public static boolean canHeal() {
-        if (rc.getExperience(SkillType.HEAL) == 74 && attackLevel <= 3 && (!isBuilder() && !isHealer()))
+        if (rc.getExperience(SkillType.HEAL) == SkillType.HEAL.getExperience(4) - 1
+                && attackLevel <= 3 && (!isBuilder() && !isHealer()))
             return false;
         return true;
     }
@@ -42,28 +43,19 @@ public class SpecialtyManager extends Robot {
 
     public static boolean act() throws GameActionException {
         if (!isBuilder()) {
-//            if (Cache.closestEnemy != null || rc.getCrumbs() < 1000 || rc.getRoundNum() < 1500)
-//                return false;
-//            if (buildLevel >= 3)
-//                return false;
             return false;
         }
-        if (buildLevel == 6)
-            return false;
         if (!rc.isActionReady())
             return false;
+        boolean useWater = rc.getRoundNum() > 200 && rc.senseMapInfo(rc.getLocation()).getTeamTerritory() == oppTeam;
+        boolean needLevelUp = buildLevel < 6;
         for (int i = 8; --i >= 0;) {
             MapLocation loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
-            if ((loc.x + loc.y) % 2 == 0 && rc.canDig(loc)) {
+            if (needLevelUp && (loc.x + loc.y) % 2 == 0 && rc.canDig(loc)) {
                 rc.dig(loc);
             }
-        }
-        if (rc.isActionReady()) {
-            for (int i = 8; --i >= 0;) {
-                MapLocation loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
-                if (rc.canFill(loc)) {
-                    rc.fill(loc);
-                }
+            if (useWater && loc.x % 4 == 0 && loc.y % 4 == 0 && rc.canBuild(TrapType.WATER, loc)) {
+                rc.build(TrapType.WATER, loc);
             }
         }
         return false;
