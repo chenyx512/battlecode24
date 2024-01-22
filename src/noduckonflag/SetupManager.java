@@ -1,7 +1,7 @@
-package bot1;
+package noduckonflag;
 
 import battlecode.common.*;
-import bot1.fast.FastMath;
+import noduckonflag.fast.FastMath;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;

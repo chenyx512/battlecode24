@@ -1,4 +1,4 @@
-package bot1;
+package noduckonflag;
 
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
