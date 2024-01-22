@@ -1,4 +1,4 @@
-package bot1;
+package camal_copy;
 
 import battlecode.common.*;
 

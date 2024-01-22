@@ -1,7 +1,7 @@
-package bot1;
+package camal_copy;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import camal_copy.fast.*;
 
 public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;
