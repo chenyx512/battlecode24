@@ -1,8 +1,7 @@
-package bot1;
+package flagbot_final;
 
 import battlecode.common.*;
-import bot1.fast.*;
-import scala.collection.immutable.Stream;
+import flagbot_final.fast.*;
 
 public class PathFinder extends Robot {
     private static MapLocation target = null;
@@ -224,8 +223,6 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             if (rc.canMove(dir))
                 return true;
-            if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
-                return false;
             MapLocation loc = rc.getLocation().add(dir);
             if (!rc.canSenseLocation(loc))
                 return false;
@@ -234,40 +231,10 @@ public class PathFinder extends Robot {
                     return stuckCnt < 10;
                 return false;
             }
+            if (rc.senseMapInfo(loc).isWater() && rc.getCrumbs() > 50)
+                return true;
             if (rc.senseMapInfo(loc).isDam())
                 return true;
-            if (rc.senseMapInfo(loc).isWater()) {
-                if (rc.getCrumbs() < 200 || rc.getRoundNum() <= 150)
-                    return false;
-                int wall_cnt = 0;
-                boolean lastWall = false;
-                for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
-                    // technically this doesn't wrap around... future TODO
-                    MapLocation adjLoc = loc.add(d);
-                    if (!rc.canSenseLocation(adjLoc) || rc.senseMapInfo(adjLoc).isWall()) {
-                        if (!lastWall) {
-                            wall_cnt++;
-                        }
-                    } else {
-                        lastWall = false;
-                    }
-                }
-                // We must be allowed to remove water if it is adjacent to two non-connected walls
-                if (wall_cnt > 1)
-                    return true;
-                MapLocation N = loc.add(Direction.NORTH);
-                MapLocation E = loc.add(Direction.EAST);
-                MapLocation S = loc.add(Direction.SOUTH);
-                MapLocation W = loc.add(Direction.WEST);
-                boolean canN = rc.canSenseLocation(N) && rc.sensePassability(N);
-                boolean canE = rc.canSenseLocation(E) && rc.sensePassability(E);
-                boolean canS = rc.canSenseLocation(S) && rc.sensePassability(S);
-                boolean canW = rc.canSenseLocation(W) && rc.sensePassability(W);
-                // we must be allowed to remove water
-                if (!canN && !canS) return true;
-                if (!canE && !canW) return true;
-                return false;
-            }
             return false;
         }
 
