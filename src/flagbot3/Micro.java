@@ -1,7 +1,7 @@
-package bot1;
+package flagbot3;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import flagbot3.fast.*;
 
 public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;
@@ -35,12 +35,12 @@ public class Micro extends Robot {
         } else {
             tryAttack();
             bestMicro = getBestMicro();
-            if (bestMicro.canAttack == 0 &&
-                    (SpecialtyManager.isBuilder() || (rc.getCrumbs() > 2000 && rc.getRoundNum() > 300 && Cache.nearbyEnemies.length > 5)))
-                tryDropTrap();
+//            if (bestMicro.canAttack == 0 &&
+//                    (SpecialtyManager.isBuilder() || (rc.getCrumbs() > 2000 && rc.getRoundNum() > 300 && Cache.nearbyEnemies.length > 5)))
+//                tryDropTrap();
             tryMove(bestMicro.dir);
             tryAttack();
-            if (state != STATE_OFFENSIVE || SpecialtyManager.isHealer()) {
+            if (bestMicro.numAttackRangeNext == 0 || (bestMicro.allyCloseCnt > 0 || SpecialtyManager.isHealer())) {
                 tryHeal();
             }
             return true;
@@ -89,8 +89,7 @@ public class Micro extends Robot {
             micros[7].updateAlly(ally);
             micros[8].updateAlly(ally);
         }
-        int bar = 750;
-        if (rc.getHealth() < bar) {
+        if (rc.getHealth() < 750) {
             state = STATE_DEFENSIVE;
         } else if (SpecialtyManager.isBuilder()) {
             state = STATE_BUILDING;
@@ -128,8 +127,6 @@ public class Micro extends Robot {
     }
 
     private static void tryDropTrap() throws GameActionException {
-        if (!Constants.USE_TRAP)
-            return;
         if (!rc.isActionReady() || Cache.closestEnemy == null)
             return;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
@@ -306,8 +303,7 @@ public class Micro extends Robot {
         int minDistanceToEnemy = 99999999;
         int minDistanceToAlly = 99999999;
         int builderDis = 99999999;
-        int canHealLow, canHealHigh;
-        int disToHealerHigh = 9999999;
+        int canHealPriority;
         int disToHealer = 9999999;
         MapLocation closestEnemyLoc;
 
@@ -349,17 +345,12 @@ public class Micro extends Robot {
             int dis = loc.distanceSquaredTo(ally.location);
             if (dis <= 13)
                 allyWithinBlastRange++;
-            if (ally.getHealth() < 870 && !SpecialtyManager.isHealer(ally)) {
-                // first priority is to heal a non-healer
-                if (dis <= GameConstants.HEAL_RADIUS_SQUARED && rc.isActionReady()) {
-                    canHealHigh = 1;
+            if (rc.getHealth() < 800 || ally.getHealth() < 800) {
+                if (dis <= GameConstants.HEAL_RADIUS_SQUARED) {
+                    canHealPriority = 1;
                 }
-                disToHealerHigh = Math.min(disToHealerHigh, dis);
-            }  else if (ally.health < 870) {
-                if (dis <= GameConstants.HEAL_RADIUS_SQUARED  && rc.isActionReady()) {
-                    canHealLow = 1;
-                }
-                disToHealer = Math.min(disToHealer, dis);
+                if (dis < disToHealer)
+                    disToHealer = dis;
             }
             if (dis < minDistanceToAlly) {
                 minDistanceToAlly = dis;
@@ -401,17 +392,36 @@ public class Micro extends Robot {
                         return canAttack > other.canAttack;
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
-                    if (canHealHigh != other.canHealHigh)
-                        return canHealHigh > other.canHealHigh;
-                    if (canHealLow != other.canHealLow)
-                        return canHealLow > other.canHealLow;
-                    if (disToHealerHigh != other.disToHealerHigh)
-                        return disToHealerHigh < other.disToHealerHigh;
-                    if (disToHealer != other.disToHealer)
-                        return disToHealer < other.disToHealer;
-                    if (minDistanceToAlly != other.minDistanceToAlly)
-                        return minDistanceToAlly < other.minDistanceToAlly;
-                    return minDistanceToEnemy >= other.minDistanceToEnemy;
+                    if (!SpecialtyManager.isHealer() || rc.isActionReady()) {
+                        if (canHealPriority != other.canHealPriority)
+                            return canHealPriority > other.canHealPriority;
+                        return disToHealer <= other.disToHealer;
+                    }
+
+                case STATE_HOLDING:
+                    if (canMove != other.canMove) return canMove > other.canMove;
+                    // if can step attack anyone, do it
+                    if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
+                        return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
+                    if (numAttackRangeNext - canAttack != other.numAttackRangeNext - other.canAttack)
+                        return numAttackRangeNext - canAttack < other.numAttackRangeNext - other.canAttack;
+                    if (canAttack != other.canAttack)
+                        return canAttack > other.canAttack;
+                    if (canKill != other.canKill)
+                        return canKill > other.canKill;
+                    // otherwise hold your ground
+                    if (numAttackRangeNext != other.numAttackRangeNext)
+                        return numAttackRangeNext < other.numAttackRangeNext;
+                    // try to find someone I can heal while keeping enemy close
+                    if (rc.isActionReady()) {
+                        // If I can heal someone rn, always do it
+                        if (canHealPriority != other.canHealPriority)
+                            return canHealPriority > other.canHealPriority;
+                    }
+                    if (numAttackRangeNext > 0) {
+                        return minDistanceToEnemy >= other.minDistanceToEnemy;
+                    }
+                    return minDistanceToEnemy <= other.minDistanceToEnemy;
 
                 case STATE_OFFENSIVE:
                     if (canMove != other.canMove) return canMove > other.canMove;

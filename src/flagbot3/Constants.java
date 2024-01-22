@@ -1,4 +1,4 @@
-package bot1;
+package flagbot3;
 
 import battlecode.common.Direction;
 
@@ -41,7 +41,6 @@ public class Constants {
 
     public static final int MICRO_MIN_BYTECODE_REMAINING = 10000;
 
-    public static final boolean USE_TRAP = true;
-    public static final int NUM_BUILDER = USE_TRAP? 3 : 0;
+    public static final int NUM_BUILDER = 0;
     public static final int NUM_HEALER = 33;
 }

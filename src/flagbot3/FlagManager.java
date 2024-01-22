@@ -1,12 +1,10 @@
-package bot1;
+package flagbot3;
 
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 
 public class FlagManager extends RobotPlayer {
-    public static boolean urgent;
-
     private static int carriedEnemyFlagIndex = -1;
     private static int lastFlagCarryRound = -1;
 
@@ -64,8 +62,6 @@ public class FlagManager extends RobotPlayer {
     }
 
     public static boolean act() throws GameActionException {
-        urgent = false;
-
         boolean[] enemyFlagSeen = new boolean[3];
         boolean[] myFlagSeen = new boolean[3];
         boolean hasFlag = rc.hasFlag(); // handle edge case of picking flag up in our own spawn zone
@@ -79,7 +75,6 @@ public class FlagManager extends RobotPlayer {
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
                     Comms.writeMyflagsDistress(flagIndex, 1);
                 }
-                urgent = true;
             } else {
                 int flagIndex = getOppFlagIndex(flag);
                 enemyFlagSeen[flagIndex] = true;
@@ -90,8 +85,8 @@ public class FlagManager extends RobotPlayer {
                     }
                     Comms.writeOppflagsCarried(flagIndex, 0);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
-                    if (SpecialtyManager.isHealer() && Cache.nearbyFriends.length >= Cache.nearbyEnemies.length) {
-                        // only healers carry flag cuz they useless
+                    if (!SpecialtyManager.isBuilder()) {
+                        // builder is free from flag duty
                         if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
                                 && !rc.getLocation().isAdjacentTo(flag.getLocation())) {
                             // a dropped flag away from us, pick it up ASAP
@@ -105,8 +100,6 @@ public class FlagManager extends RobotPlayer {
                             break;
                         }
                     }
-                } else {
-                    urgent = true;
                 }
             }
         }

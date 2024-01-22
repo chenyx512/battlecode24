@@ -3,6 +3,7 @@ package bot1;
 import battlecode.common.*;
 
 public class KillRecorder extends RobotPlayer {
+    public static int cntDiff;
     private static boolean isAlive = false;
     private static int[] killCnt = new int[GameConstants.JAILED_ROUNDS];
     private static int roundNo;
@@ -28,6 +29,8 @@ public class KillRecorder extends RobotPlayer {
             Comms.writeOppteamCnt(Comms.readOppteamCnt() + killCnt[roundNo]);
             killCnt[roundNo] = 0;
         }
+        cntDiff = Comms.readMyteamCnt() - Comms.readOppteamCnt();
+        // TODO off by one may cause count to go under 0
     }
 
     public static void recordKill() throws GameActionException {

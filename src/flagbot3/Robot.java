@@ -1,4 +1,4 @@
-package bot1;
+package flagbot3;
 
 import battlecode.common.*;
 
@@ -12,7 +12,7 @@ public class Robot extends RobotPlayer {
     public static boolean isMaster = false;
 
     static void init() throws GameActionException {
-        initHQLocs(); // also the flag manager and KillRecorder inits
+        initHQLocs(); // also the flag manager
     }
 
     static void initTurn() throws GameActionException {
@@ -134,8 +134,8 @@ public class Robot extends RobotPlayer {
                 mySpawnCenters[i] = new MapLocation(sumX / 9, sumY / 9);
                 Comms.writeHqLoc(i, Util.loc2int(mySpawnCenters[i]));
                 Debug.println(Debug.INFO, String.format("HQ %d: %d %d", i, sumX / 9, sumY / 9));
+                isMaster = true;
             }
-            isMaster = true;
             FlagManager.init();
             Comms.push();
         } else {
