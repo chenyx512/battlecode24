@@ -52,8 +52,15 @@ public class PathFinder extends Robot {
             target = carrierLoc.add(protectDir).add(protectDir);
         }
         Direction dir = BugNav.getMoveDir();
-        if (dir != null && !rc.getLocation().add(dir).isAdjacentTo(carrierLoc))
-            tryMove(dir);
+        if (dir != null) {
+            if(rc.getLocation().add(dir).isAdjacentTo(carrierLoc)) {
+                if (rc.canFill(rc.getLocation().add(dir))) {
+                    rc.fill(rc.getLocation().add(dir));
+                }
+            } else {
+                tryMove(dir);
+            }
+        }
     }
 
     static public void move(MapLocation loc) throws GameActionException {
@@ -210,6 +217,9 @@ public class PathFinder extends Robot {
         }
 
         static int getTurnDir(Direction dir) throws GameActionException {
+            MapLocation loc = rc.getLocation().add(dir);
+            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
+                return FastMath.rand256() % 2;
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
             Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
@@ -232,8 +242,6 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             if (rc.canMove(dir))
                 return true;
-            if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
-                return false;
             MapLocation loc = rc.getLocation().add(dir);
             if (!rc.canSenseLocation(loc))
                 return false;
@@ -248,6 +256,8 @@ public class PathFinder extends Robot {
             if (info.isWater()) {
                 if (info.getCrumbs() > 0)
                     return true;
+                if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
+                    return false;
                 if (rc.getCrumbs() < 200 || rc.getRoundNum() <= 150)
                     return false;
                 int wall_cnt = 0;

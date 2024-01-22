@@ -43,5 +43,5 @@ public class Constants {
 
     public static final boolean USE_TRAP = true;
     public static final int NUM_BUILDER = 0;
-    public static final int NUM_HEALER = 33;
+    public static final int NUM_HEALER = 30;
 }
