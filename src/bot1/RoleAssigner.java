@@ -168,9 +168,14 @@ public class RoleAssigner extends RobotPlayer {
             int flagid = newRole - 3;
             if (Comms.readOppflagsExists(flagid) == 0)
                 return -1;
+
             if (Comms.readOppflagsCarried(flagid) == 1) {
                 MapLocation flagloc = Util.int2loc(Comms.readOppflagsLoc(flagid));
-                return getDistressScore(Comms.readOppflagsAssigned(flagid), flagloc);
+                if (Comms.readOppflagsEscortLoc(flagid) == 0) {
+                    return -1;
+                } else {
+                    return getDistressScore(Comms.readOppflagsAssigned(flagid), flagloc);
+                }
             } else {
                 return -0.1 - Comms.readOppflagsAssigned(flagid) / 100.0;
             }

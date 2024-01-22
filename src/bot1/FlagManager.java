@@ -112,6 +112,13 @@ public class FlagManager extends RobotPlayer {
         }
         if (hasFlag) {
             lastFlagCarryRound = rc.getRoundNum();
+            if (Cache.closestEnemy != null) {
+                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(Cache.closestEnemy));
+                PathFinder.tryMoveDir(Cache.closestEnemy.directionTo(rc.getLocation()));
+                flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
+            } else {
+                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
+            }
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             Comms.writeOppflagsCarried(carriedEnemyFlagIndex, 1);
@@ -120,11 +127,6 @@ public class FlagManager extends RobotPlayer {
                 Comms.writeOppflagsExists(carriedEnemyFlagIndex, 0);
                 carriedEnemyFlagIndex = -1;
                 return false;
-            }
-            if (Cache.closestEnemy != null) {
-                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(Cache.closestEnemy));
-            } else {
-                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
             }
             return true;
         } else {
