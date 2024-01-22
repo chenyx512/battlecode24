@@ -11,6 +11,8 @@ public class Robot extends RobotPlayer {
     public static int baseHeal = SkillType.HEAL.skillEffect;
     public static boolean isMaster = false;
 
+    private static int lastCrumbRound, crumbStuckCount;
+
     static void init() throws GameActionException {
         initHQLocs(); // also the flag manager and KillRecorder inits
     }
@@ -98,9 +100,26 @@ public class Robot extends RobotPlayer {
     }
 
     static boolean findCrumb() throws GameActionException {
+        // If we get stuck finding crumb, just give up
+        if (rc.getRoundNum() > 200 && crumbStuckCount > 10) {
+            return false;
+        }
         MapLocation[] crumbs = rc.senseNearbyCrumbs(-1);
         if (crumbs.length > 0) {
-            PathFinder.move(Util.getClosestLoc(crumbs));
+            MapLocation loc = Util.getClosestLoc(crumbs);
+            if (rc.getRoundNum() > 200) {
+                if (lastCrumbRound >= rc.getRoundNum() - 30) {
+                    crumbStuckCount++;
+                } else {
+                    crumbStuckCount = 0;
+                }
+                lastCrumbRound = rc.getRoundNum();
+            }
+            PathFinder.move(loc);
+            if (rc.getLocation() == loc) {
+                crumbStuckCount = 0;
+            }
+            PathFinder.move(loc);
         }
         return false;
     }
