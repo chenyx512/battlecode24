@@ -34,12 +34,11 @@ public class Micro extends Robot {
             return false;
         } else {
             tryAttack();
+            tryDropTrap();
             bestMicro = getBestMicro();
-            if (bestMicro.canAttack == 0 &&
-                    (SpecialtyManager.isBuilder() || (rc.getCrumbs() > 2000 && rc.getRoundNum() > 300 && Cache.nearbyEnemies.length > 5)))
-                tryDropTrap();
             tryMove(bestMicro.dir);
             tryAttack();
+            tryDropTrap();
             if (state != STATE_OFFENSIVE || SpecialtyManager.isHealer()) {
                 tryHeal();
             }
@@ -89,13 +88,11 @@ public class Micro extends Robot {
             micros[7].updateAlly(ally);
             micros[8].updateAlly(ally);
         }
-        int bar = 750;
+        int bar = 550;
         if (rc.getHealth() < bar) {
             state = STATE_DEFENSIVE;
         } else if (SpecialtyManager.isBuilder()) {
             state = STATE_BUILDING;
-        } else if (myTotalStrength <= oppTotalStrength + 1000) {
-            state = STATE_DEFENSIVE;
         } else {
             state = STATE_OFFENSIVE;
         }
@@ -132,34 +129,32 @@ public class Micro extends Robot {
             return;
         if (!rc.isActionReady() || Cache.closestEnemy == null)
             return;
+        if (Cache.nearbyEnemies.length < 6 || Cache.nearbyFriends.length < 4)
+            return;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
         MapLocation loc = rc.getLocation().add(dir);
+        MapLocation loc2 = rc.getLocation().add(dir.rotateLeft());
+        MapLocation loc3 = rc.getLocation().add(dir.rotateRight());
         MapLocation nextLoc = loc.add(dir);
         // avoid dropping trap when there is obstacle in between
         if (rc.canSenseLocation(nextLoc) && rc.senseMapInfo(nextLoc).isWall())
             return;
-        // stun is pretty hard to mix rn, leaving out
-//        boolean canStun = true;
-//        for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
-//            MapLocation newLoc = loc.add(d);
-//            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() == TrapType.STUN) {
-//                canStun = false;
-//                break;
-//            }
-//        }
-//        if (canStun && Cache.nearbyFriends.length > 5 && rc.canBuild(TrapType.STUN, loc)) {
-//            rc.build(TrapType.STUN, loc);
-//        }
-        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.STUN, loc);
+        boolean canStun = true;
+        for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
+            MapLocation newLoc = rc.getLocation().add(d);
+            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() == TrapType.STUN) {
+                canStun = false;
+                break;
+            }
         }
-        loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
+        if (canStun && loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc)) {
             rc.build(TrapType.STUN, loc);
-        }
-        loc = rc.getLocation().add(dir.rotateLeft());
-        if (rc.canBuild(TrapType.STUN, loc) && rc.sensePassability(loc) && rc.canSenseLocation(loc.add(dir)) && rc.sensePassability(loc.add(dir))) {
-            rc.build(TrapType.STUN, loc);
+        } else if (canStun && rc.getLocation().isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, rc.getLocation())) {
+            rc.build(TrapType.STUN, rc.getLocation());
+        } else if (canStun && loc2.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc2)) {
+            rc.build(TrapType.STUN, loc2);
+        } else if (canStun && loc3.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc3)) {
+            rc.build(TrapType.STUN, loc3);
         }
     }
 
