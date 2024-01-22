@@ -97,6 +97,14 @@ public class PathFinder extends Robot {
                 if (canMoveOrFill(dir)) {
                     return dir;
                 }
+                Direction dirL = dir.rotateLeft();
+                if (canMoveOrFill(dirL)) {
+                    return dirL;
+                }
+                Direction dirR = dir.rotateRight();
+                if (canMoveOrFill(dirR)) {
+                    return dirR;
+                }
                 currentTurnDir = getTurnDir(dir);
                 // obstacle encountered, rotate and add new dirs to stack
                 while (!canMoveOrFill(dir) && dirStack.size < 8) {

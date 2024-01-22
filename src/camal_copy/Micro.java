@@ -26,7 +26,7 @@ public class Micro extends Robot {
 
         if (Cache.nearbyEnemies.length == 0) {
             tryHeal();
-            if (Cache.allyToHeal && SpecialtyManager.isHealer()) {
+            if (rc.isActionReady() && Cache.allyToHeal && !SpecialtyManager.isHealer(Cache.healingTarget) && SpecialtyManager.isHealer()) {
                 PathFinder.move(Cache.healingTarget.location);
                 tryHeal();
                 return true;
@@ -37,6 +37,7 @@ public class Micro extends Robot {
             tryDropTrap();
             bestMicro = getBestMicro();
             tryMove(bestMicro.dir);
+            Cache.closestEnemy = bestMicro.closestEnemyLoc;
             tryAttack();
             tryDropTrap();
             if (state != STATE_OFFENSIVE || SpecialtyManager.isHealer()) {
@@ -137,7 +138,7 @@ public class Micro extends Robot {
         MapLocation loc3 = rc.getLocation().add(dir.rotateRight());
         MapLocation nextLoc = loc.add(dir);
         // avoid dropping trap when there is obstacle in between
-        if (rc.canSenseLocation(nextLoc) && rc.senseMapInfo(nextLoc).isWall())
+        if (rc.canSenseLocation(nextLoc) && !rc.sensePassability(nextLoc))
             return;
         boolean canStun = true;
         for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
