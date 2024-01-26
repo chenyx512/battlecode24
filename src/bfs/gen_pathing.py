@@ -304,7 +304,7 @@ public class BFS{rad} {{
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
-        for rad in ["34", "20", "10"]:
+        for rad in ["20"]:
             gen_full(sys.argv[1], rad)
     else:
         gen_full(sys.argv[1], sys.argv[2])
