@@ -1,7 +1,7 @@
-package SPRINT2;
+package bfs;
 
 import battlecode.common.*;
-import SPRINT2.fast.*;
+import bfs.fast.*;
 
 public class Util extends RobotPlayer {
     public static String toString(Object o) {

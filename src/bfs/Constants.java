@@ -1,4 +1,4 @@
-package SPRINT2;
+package bfs;
 
 import battlecode.common.Direction;
 

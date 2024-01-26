@@ -1,8 +1,8 @@
 // https://raw.githubusercontent.com/IvanGeffner/Battlecode23/master/fortytwo/Explore.java
-package SPRINT2;
+package bfs;
 
 import battlecode.common.*;
-import SPRINT2.fast.FastMath;
+import bfs.fast.FastMath;
 
 public class Explorer extends RobotPlayer {
     private static MapLocation exploreLoc = null;

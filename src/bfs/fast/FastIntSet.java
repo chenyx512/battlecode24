@@ -1,4 +1,4 @@
-package SPRINT2.fast;
+package bfs.fast;
 
 public class FastIntSet {
     public StringBuilder keys;

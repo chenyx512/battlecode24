@@ -1,4 +1,4 @@
-package SPRINT2.fast;
+package bfs.fast;
 
 import battlecode.common.MapLocation;
 

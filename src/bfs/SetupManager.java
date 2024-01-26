@@ -1,7 +1,7 @@
-package SPRINT2;
+package bfs;
 
 import battlecode.common.*;
-import SPRINT2.fast.FastMath;
+import bfs.fast.FastMath;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;
