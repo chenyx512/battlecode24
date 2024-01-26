@@ -294,6 +294,7 @@ public class Micro extends Robot {
         Direction dir;
         MapLocation loc;
         int canMove;
+        int blockTeammate;
         int needFill;
         int canAttack;
         int canKill;
@@ -342,9 +343,34 @@ public class Micro extends Robot {
             }
         }
 
-        void updateAlly(RobotInfo ally) {
+        void updateAlly(RobotInfo ally) throws GameActionException {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(ally.location);
+            if (dis <= 2 && blockTeammate == 0 && ally.health < Math.min(rc.getHealth(), 700) && state != STATE_DEFENSIVE) {
+                // If I am moving adjacent to a teammate, and we are blocking that teammate's way out from the enemy
+                // that teammate must be allowed to have another way out of the enemy
+                Direction dirOut = closestEnemyLoc.directionTo(ally.location);
+                Direction blockedDir = ally.location.directionTo(loc);
+                if (blockedDir.equals(dirOut) || blockedDir.equals(dirOut.rotateLeft()) || blockedDir.equals(dirOut.rotateRight())) {
+                    // we are blocking the teammate's way out
+                    ok: {
+                        MapLocation a = ally.location.add(dirOut);
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        a = ally.location.add(dirOut.rotateLeft());
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        a = ally.location.add(dirOut.rotateLeft());
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        blockTeammate = 1;
+                        Debug.setIndicatorDot(Debug.MICRO, loc, 255, 0, 0);
+                    }
+                }
+            }
             if (dis <= 13)
                 allyWithinBlastRange++;
             if (ally.getHealth() < 870 && !SpecialtyManager.isHealer(ally)) {
@@ -368,10 +394,11 @@ public class Micro extends Robot {
         }
 
         boolean isBetterThan(MicroDirection other) {
+            if (canMove != other.canMove) return canMove > other.canMove;
+            if (blockTeammate != other.blockTeammate) return blockTeammate < other.blockTeammate;
             switch (state) {
                 case STATE_BUILDING:
                     // play safe as builder
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canKill != other.numAttackRange - other.canKill)
                         return numAttackRange - canKill < other.numAttackRange - other.canKill;
                     if (canKill != other.canKill)
@@ -389,7 +416,6 @@ public class Micro extends Robot {
 
                 case STATE_DEFENSIVE:
                     // play safe
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (numAttackRangeNext - canKill != other.numAttackRangeNext - other.canKill) {
@@ -412,7 +438,6 @@ public class Micro extends Robot {
                     return minDistanceToEnemy >= other.minDistanceToEnemy;
 
                 case STATE_HOLDING:
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)
@@ -437,7 +462,6 @@ public class Micro extends Robot {
 
 
                 case STATE_OFFENSIVE:
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)

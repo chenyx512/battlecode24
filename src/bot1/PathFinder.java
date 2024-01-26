@@ -218,10 +218,12 @@ public class PathFinder extends Robot {
 
         static int getTurnDir(Direction dir) throws GameActionException {
             MapLocation loc = rc.getLocation().add(dir);
-            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
-                return FastMath.rand256() % 2;
+//            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
+//                return FastMath.rand256() % 2;
+            Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
+            Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
             if (ansL == -1 || ansR == -1 || ansL == ansR) return FastMath.rand256() % 2;
             if (ansL <= ansR) {
@@ -240,9 +242,28 @@ public class PathFinder extends Robot {
         }
 
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
-            if (rc.canMove(dir))
-                return true;
             MapLocation loc = rc.getLocation().add(dir);
+            if (rc.canMove(dir)) {
+                // it is not ok to move onto a tile to block a teammate's movement
+                for (int i = Cache.nearbyFriends.length; --i >= 0;) {
+                    RobotInfo ally = Cache.nearbyFriends[i];
+                    if (!ally.location.isAdjacentTo(loc))
+                        continue;
+                    boolean ok = false;
+                    for (Direction d: Constants.MOVEABLE_DIRECTIONS) {
+                        MapLocation a = ally.location.add(d);
+                        if (rc.canSenseLocation(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !loc.equals(a)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+                    if (!ok) {
+                        Debug.setIndicatorDot(Debug.MICRO, rc.getLocation().add(dir), 255, 0, 0);
+                        return false;
+                    }
+                }
+                return true;
+            }
             if (!rc.canSenseLocation(loc))
                 return false;
             if (rc.hasFlag()) {
