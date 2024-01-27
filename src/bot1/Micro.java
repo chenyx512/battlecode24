@@ -102,6 +102,21 @@ public class Micro extends Robot {
         for (int i = 0; i < 8; ++i) {
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
+        if (micro.needFill == 1) {
+            // if a fill is needed, fill and then recalc where to move
+            MapLocation fillLoc = rc.getLocation().add(micro.dir);
+            if (rc.canFill(fillLoc)) {
+                rc.fill(fillLoc);
+                micro = micros[8];
+                for (int i = 0; i < 8; ++i) {
+                    micros[i].resetAfterFill();
+                    if (micros[i].isBetterThan(micro)) micro = micros[i];
+                }
+                return micro;
+            } else {
+                Debug.failFast("impossible");
+            }
+        }
         return micro;
     }
 
@@ -323,12 +338,20 @@ public class Micro extends Robot {
             }
         }
 
+        void resetAfterFill() {
+            needFill = 0;
+            canAttack = 0;
+            canKill = 0;
+            canHealLow = 0;
+            canHealHigh = 0;
+        }
+
         void updateEnemy(RobotInfo enemy) {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(enemy.location);
             if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
                 numAttackRange++;
-                if (rc.isActionReady() && needFill == 0) {
+                if (rc.isActionReady()) {
                     canAttack = 1;
                     if (enemy.health <= rc.getAttackDamage() || enemy.hasFlag)
                         canKill = 1;
