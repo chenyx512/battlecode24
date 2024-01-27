@@ -1,4 +1,4 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
 
