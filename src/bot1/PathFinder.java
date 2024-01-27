@@ -145,6 +145,14 @@ public class PathFinder extends Robot {
                     if (canMoveOrFill(dir)) {
                         return dir;
                     }
+                    Direction dirL = dir.rotateLeft();
+                    if (canMoveOrFill(dirL)) {
+                        return dirL;
+                    }
+                    Direction dirR = dir.rotateRight();
+                    if (canMoveOrFill(dirR)) {
+                        return dirR;
+                    }
                     dirStack.push(dir);
                 }
                 // keep rotating and adding things to the stack
@@ -244,6 +252,8 @@ public class PathFinder extends Robot {
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             MapLocation loc = rc.getLocation().add(dir);
             if (rc.canMove(dir)) {
+                if (rc.hasFlag())
+                    return true;
                 // it is not ok to move onto a tile to block a teammate's movement
                 for (int i = Cache.nearbyFriends.length; --i >= 0;) {
                     RobotInfo ally = Cache.nearbyFriends[i];
@@ -272,7 +282,7 @@ public class PathFinder extends Robot {
                 return false;
             }
             MapInfo info = rc.senseMapInfo(loc);
-            if (info.isDam())
+            if (info.isDam() && SetupManager.routeSetterDestID == -1)
                 return true;
             if (info.isWater()) {
                 if (info.getCrumbs() > 0)
@@ -318,7 +328,7 @@ public class PathFinder extends Robot {
             if (!rc.onTheMap(newLoc))
                 return false;
             if (rc.canSenseLocation(newLoc)) {
-                if (rc.hasFlag()) {
+                if (rc.hasFlag() || SetupManager.routeSetterDestID != -1) {
                     return rc.sensePassability(newLoc);
                 } else {
                     return !rc.senseMapInfo(newLoc).isWall();
