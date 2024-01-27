@@ -250,7 +250,7 @@ public class RoleAssigner extends RobotPlayer {
         }
     }
 
-    private static void trySpawn(int hqid) throws GameActionException {
+    public static void trySpawn(int hqid) throws GameActionException {
         for (Direction dir : Constants.ALL_DIRECTIONS) {
             MapLocation loc = Robot.mySpawnCenters[hqid].add(dir);
             if (rc.canSpawn(loc)) {

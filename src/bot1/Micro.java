@@ -351,7 +351,7 @@ public class Micro extends Robot {
             int dis = loc.distanceSquaredTo(enemy.location);
             if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
                 numAttackRange++;
-                if (rc.isActionReady()) {
+                if (rc.isActionReady() && (needFill == 0 || Cache.nearbyFriends.length - Cache.nearbyEnemies.length > 5)) {
                     canAttack = 1;
                     if (enemy.health <= rc.getAttackDamage() || enemy.hasFlag)
                         canKill = 1;

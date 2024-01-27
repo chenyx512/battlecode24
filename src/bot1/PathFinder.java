@@ -279,7 +279,7 @@ public class PathFinder extends Robot {
                     return true;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
-                if (rc.getCrumbs() < 200 || rc.getRoundNum() <= 150)
+                if (rc.getCrumbs() < 200 || (rc.getRoundNum() <= 150 && SetupManager.routeSetterDestID == -1))
                     return false;
                 int wall_cnt = 0;
                 boolean lastWall = false;
