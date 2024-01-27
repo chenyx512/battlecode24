@@ -485,6 +485,11 @@ public class Micro extends Robot {
 
 
                 case STATE_OFFENSIVE:
+                    // when surrounding enemy at a tight choke point, someone needs to go in
+                    if (myTotalStrength > 900 && myTotalStrength - oppTotalStrength > 500) {
+                        if (canAttack != other.canAttack)
+                            return canAttack > other.canAttack;
+                    }
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)
