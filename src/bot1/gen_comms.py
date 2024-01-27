@@ -37,6 +37,7 @@ SCHEMA = {
             'original_loc': 12,
             'assigned': 6,
             'distress': 1,
+            'not_seen_cnt': 7,
         }
     },
     'oppflags': {
