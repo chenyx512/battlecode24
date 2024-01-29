@@ -38,7 +38,7 @@ public class MapRecorder extends RobotPlayer {
     }
 
     public static boolean getVisited(MapLocation loc) {
-        return vals[Util.loc2int(loc)] != 0 || vals[Util.loc2int(getSymmetricLoc(loc))] != 0;
+        return (vals[Util.loc2int(loc)] != 0) || (vals[Util.loc2int(getSymmetricLoc(loc))] != 0);
     }
 
     public static int getData(MapLocation loc) {
