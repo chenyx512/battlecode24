@@ -97,6 +97,8 @@ public class PathFinder extends Robot {
             prevTarget = target;
             if (myLastLoc == rc.getLocation()) {
                 stuckCnt++;
+            } else {
+                stuckCnt = 0;
             }
             myLastLoc = rc.getLocation();
             if (dirStack.size == 0) {
@@ -283,7 +285,8 @@ public class PathFinder extends Robot {
             if (!rc.canSenseLocation(loc))
                 return false;
             if (rc.hasFlag()) {
-                if (rc.senseRobotAtLocation(loc) != null)
+                RobotInfo r = rc.senseRobotAtLocation(loc);
+                if (r != null && r.team == myTeam) // trust me we do bump into opponent robot lmao
                     return stuckCnt < 10;
                 return false;
             }

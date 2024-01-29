@@ -39,7 +39,7 @@ public class Constants {
     public static final int MIN_HEALTH_TO_ADVANCE = 950;
     public static final int MIN_HEALTH_TO_STAND = 751;
 
-    public static final int MICRO_MIN_BYTECODE_REMAINING = 10000;
+    public static final int MICRO_MIN_BYTECODE_REMAINING = 7000;
 
     public static final boolean USE_TRAP = true;
     public static final int NUM_BUILDER = 0;

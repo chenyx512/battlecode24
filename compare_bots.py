@@ -13,6 +13,7 @@ NUM_CORES = 6
 assert NUM_CORES % 2 == 0
 NUM_CORES_PER_SIDE = NUM_CORES // 2
 
+# https://github.com/battlecode/battlecode24/blob/master/client/src/constants.ts
 early_maps = 'DefaultSmall DefaultMedium DefaultLarge DefaultHuge'.split()
 sprint1_maps = 'AceOfSpades Alien Ambush Battlecode24 BigDucksBigPond Canals CH3353C4K3F4CT0RY Duck Fountain Hockey MazeRunner Rivers Snake Soccer SteamboatMickey Yinyang'.split()
 sprint2_maps = ['BedWars',
@@ -33,7 +34,31 @@ sprint2_maps = ['BedWars',
                 'Racetrack',
                 'Rainbow',
                 'TreeSearch',]
-maps = early_maps + sprint1_maps + sprint2_maps
+qual_maps = [
+    'Asteroids',
+    'Backslash',
+    'Capacitance',
+    'Digging',
+    'EvilGrin',
+    'Funnel',
+    'GravitationalWaves',
+    'Joker',
+    'KingQuacksCastle',
+    'MIT',
+    'OceanFloor',
+    'ORV',
+    'Pancakes',
+    'Puzzle',
+    'StackGame',
+    'Tunnels',
+    'Whirlpool',
+    'YearOfTheDragon',
+]
+all_maps = early_maps + sprint1_maps + sprint2_maps + qual_maps
+# maps = "EndAround HeMustBeFreed Divergent FloodGates Diagonal Tunnels Capacitance GravitationalWaves ORV".split()
+# maps = "EndAround HeMustBeFreed Divergent FloodGates Diagonal".split()
+maps = all_maps
+assert all(m in all_maps for m in maps)
 
 def partition_list(maps, n):
     if n <= 0:

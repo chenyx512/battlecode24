@@ -2,6 +2,7 @@ package bot1;
 
 import battlecode.common.*;
 import bot1.fast.*;
+import org.omg.PortableInterceptor.HOLDING;
 
 public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;
@@ -24,27 +25,38 @@ public class Micro extends Robot {
             return false;
         }
 
-        if (Cache.nearbyEnemies.length == 0) {
-            tryHeal();
-            if (rc.isActionReady() && Cache.allyToHeal && !SpecialtyManager.isHealer(Cache.healingTarget) && SpecialtyManager.isHealer()) {
-                PathFinder.move(Cache.healingTarget.location);
-                tryHeal();
-                return true;
-            }
-            return false;
-        } else {
+        if (Cache.nearbyEnemies.length > 0) {
             tryAttack();
             tryDropTrap();
             bestMicro = getBestMicro();
-            tryMove(bestMicro.dir);
-            Cache.closestEnemy = bestMicro.closestEnemyLoc;
-            tryAttack();
-            tryDropTrap();
-            if (state != STATE_OFFENSIVE || SpecialtyManager.isHealer()) {
-                tryHeal();
+            if (bestMicro != null) {
+                boolean canHeal = (state == STATE_DEFENSIVE) ||
+                        (bestMicro.canAttackNext == 0 && (SpecialtyManager.isHealer() || state == STATE_HOLDING || bestMicro.canBeAttackedNext == 0));
+                if (canHeal && bestMicro.canAttack == 0 && bestMicro.canHealHigh == 0) {
+                    tryHeal();
+                }
+
+                tryMove(bestMicro.dir);
+                Cache.closestEnemy = bestMicro.closestEnemyLoc;
+                tryAttack();
+                tryDropTrap();
+
+                if (canHeal) {
+                    tryHeal();
+                }
+                return true;
+            } else {
+                Debug.printString(Debug.MICRO, "ign");
             }
+        }
+        // there's no enemy posing threat
+        tryHeal();
+        if (rc.isActionReady() && Cache.allyToHeal && !SpecialtyManager.isHealer(Cache.healingTarget) && SpecialtyManager.isHealer()) {
+            PathFinder.move(Cache.healingTarget.location);
+            tryHeal();
             return true;
         }
+        return false;
     }
 
     private static MicroDirection getBestMicro() throws GameActionException {
@@ -99,9 +111,13 @@ public class Micro extends Robot {
         Debug.printString(Debug.MICRO, "micro" + state);
 
         MicroDirection micro = micros[8];
+        int canBeAttacked = 0;
         for (int i = 0; i < 8; ++i) {
+            canBeAttacked |= micros[i].canBeAttackedNext;
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
+//        if (canBeAttacked == 0)
+//            return null;
         if (micro.needFill == 1) {
             // if a fill is needed, fill and then recalc where to move
             MapLocation fillLoc = rc.getLocation().add(micro.dir);
@@ -314,6 +330,8 @@ public class Micro extends Robot {
         int canAttack;
         int canKill;
         int numAttackRange;
+        int canBeAttackedNext;
+        int canAttackNext;
         int numAttackRangeNext;
         int allyWithinBlastRange;
         int allyCloseCnt;
@@ -341,29 +359,56 @@ public class Micro extends Robot {
         void resetAfterFill() {
             needFill = 0;
             canAttack = 0;
+            canAttackNext = 0;
+            shouldPlanStepAttack = false;
             canKill = 0;
             canHealLow = 0;
             canHealHigh = 0;
         }
 
-        void updateEnemy(RobotInfo enemy) {
+        void updateEnemy(RobotInfo enemy) throws GameActionException {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(enemy.location);
             if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
+                canBeAttackedNext = 1;
                 numAttackRange++;
+                numAttackRangeNext++;
                 if (rc.isActionReady() && (needFill == 0 || Cache.nearbyFriends.length - Cache.nearbyEnemies.length > 5)) {
                     canAttack = 1;
+                    canAttackNext = 1;
                     if (enemy.health <= rc.getAttackDamage() || enemy.hasFlag)
                         canKill = 1;
                 }
-            }
-            if (dis <= 10) {
+            } else if (dis <= 10) {
+                if (canAttackNext == 0 && shouldPlanStepAttack) {
+                    canAttackNext = checkCanAttack(loc, enemy.location);
+                }
+                if (canBeAttackedNext == 0) {
+                    canBeAttackedNext = checkCanAttack(enemy.location, loc);
+                }
                 numAttackRangeNext++;
             }
             if (dis < minDistanceToEnemy) {
                 minDistanceToEnemy = dis;
                 closestEnemyLoc = enemy.location;
             }
+        }
+
+        int checkCanAttack(MapLocation fromLoc, MapLocation toLoc) throws GameActionException {
+            Direction dir = fromLoc.directionTo(toLoc);
+            MapLocation x = fromLoc.add(dir);
+            if (x.isWithinDistanceSquared(toLoc, GameConstants.ATTACK_RADIUS_SQUARED) && rc.canSenseLocation(x) && rc.sensePassability(x) && rc.senseRobotAtLocation(x) == null) {
+                return 1;
+            }
+            x = fromLoc.add(dir.rotateRight());
+            if (x.isWithinDistanceSquared(toLoc, GameConstants.ATTACK_RADIUS_SQUARED) && rc.canSenseLocation(x) && rc.sensePassability(x) && rc.senseRobotAtLocation(x) == null) {
+                return 1;
+            }
+            x = fromLoc.add(dir.rotateLeft());
+            if (x.isWithinDistanceSquared(toLoc, GameConstants.ATTACK_RADIUS_SQUARED) && rc.canSenseLocation(x) && rc.sensePassability(x) && rc.senseRobotAtLocation(x) == null) {
+                return 1;
+            }
+            return 0;
         }
 
         void updateAlly(RobotInfo ally) throws GameActionException {
@@ -461,6 +506,7 @@ public class Micro extends Robot {
                     return minDistanceToEnemy >= other.minDistanceToEnemy;
 
                 case STATE_HOLDING:
+                    // if we can step attack anyone, do it
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)
@@ -499,13 +545,24 @@ public class Micro extends Robot {
 
                     if (shouldPlanStepAttack) {
                         // if can attack next turn, want to have as few target as possible, but at least 1
+                        if (canAttackNext != other.canAttackNext)
+                            return canAttackNext > other.canAttackNext;
+                        if (canAttack == 1) {
+                            if (canBeAttackedNext != other.canBeAttackedNext)
+                                return canBeAttackedNext < other.canBeAttackedNext;
+                        }
                         if (numAttackRangeNext != other.numAttackRangeNext) {
                             if (numAttackRangeNext == 0) return false;
                             if (other.numAttackRangeNext == 0) return true;
                             return numAttackRangeNext < other.numAttackRangeNext;
                         }
-                    } else if (numAttackRangeNext != other.numAttackRangeNext) {
-                        return numAttackRangeNext < other.numAttackRangeNext;
+                    } else {
+                        if (canBeAttackedNext != other.canBeAttackedNext)
+                            return canBeAttackedNext < other.canBeAttackedNext;
+                        if (canBeAttackedNext > 0) {
+                            if (numAttackRangeNext != other.numAttackRangeNext)
+                                return numAttackRangeNext < other.numAttackRangeNext;
+                        }
                     }
                     if (allyCloseCnt != other.allyCloseCnt) {
                         return allyCloseCnt > other.allyCloseCnt;
