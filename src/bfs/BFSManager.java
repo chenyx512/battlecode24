@@ -110,7 +110,7 @@ public class BFSManager {
         int bestGreedyDist = bestDistMovable;
         //Direction greedyDist = Direction.CENTER;
 
-
+        // TODO: unroll loop
         for (Direction d : dirs){
             if (d == Direction.CENTER) continue;
             if (!AdjacentTiles.dirDanger[d.ordinal()].closeToEnemyHQ){
@@ -129,7 +129,8 @@ public class BFSManager {
                     newLoc = myLoc.add(d);
                     if (!rc.onTheMap(newLoc)) continue;
                     RobotInfo r = rc.senseRobotAtLocation(newLoc);
-                    if (r != null && r.getType() != RobotType.HEADQUARTERS){
+                    // if (r != null && r.getType() != RobotType.HEADQUARTERS){
+                    if (r != null){
                         //rc.setIndicatorDot(newLoc, 255, 255, 0);
                         int newDist = getDistance(AdjacentTiles.dirDanger[d.ordinal()].endLoc);
                         if (newDist != 0 && newDist < bestGreedyDist) {

@@ -37,6 +37,15 @@ public class MapRecorder extends RobotPlayer {
         return val != WALL_BIT;
     }
 
+    public static boolean getPassibleStrict(MapLocation loc) {
+        int val = vals[Util.loc2int(loc)];
+
+        if (val > 0)
+            return val == SEEN_BIT;
+        val = vals[Util.loc2int(getSymmetricLoc(loc))];
+        return val == SEEN_BIT;
+    }
+
     public static int getData(MapLocation loc) {
         return vals[Util.loc2int(loc)];
     }
