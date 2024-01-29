@@ -104,13 +104,16 @@ public class PathFinder extends Robot {
                 if (canMoveOrFill(dir)) {
                     return dir;
                 }
-                Direction dirL = dir.rotateLeft();
-                if (canMoveOrFill(dirL)) {
-                    return dirL;
-                }
-                Direction dirR = dir.rotateRight();
-                if (canMoveOrFill(dirR)) {
-                    return dirR;
+                MapLocation loc = rc.getLocation().add(dir);
+                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                    Direction dirL = dir.rotateLeft();
+                    if (canMoveOrFill(dirL)) {
+                        return dirL;
+                    }
+                    Direction dirR = dir.rotateRight();
+                    if (canMoveOrFill(dirR)) {
+                        return dirR;
+                    }
                 }
                 currentTurnDir = getTurnDir(dir);
                 // obstacle encountered, rotate and add new dirs to stack
@@ -145,13 +148,16 @@ public class PathFinder extends Robot {
                     if (canMoveOrFill(dir)) {
                         return dir;
                     }
-                    Direction dirL = dir.rotateLeft();
-                    if (canMoveOrFill(dirL)) {
-                        return dirL;
-                    }
-                    Direction dirR = dir.rotateRight();
-                    if (canMoveOrFill(dirR)) {
-                        return dirR;
+                    MapLocation loc = rc.getLocation().add(dir);
+                    if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                        Direction dirL = dir.rotateLeft();
+                        if (canMoveOrFill(dirL)) {
+                            return dirL;
+                        }
+                        Direction dirR = dir.rotateRight();
+                        if (canMoveOrFill(dirR)) {
+                            return dirR;
+                        }
                     }
                     dirStack.push(dir);
                 }

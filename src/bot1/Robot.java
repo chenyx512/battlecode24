@@ -20,7 +20,7 @@ public class Robot extends RobotPlayer {
     static void initTurn() throws GameActionException {
         Comms.pull();
         Debug.bytecodeDebug += " compull=" + Clock.getBytecodeNum();
-        MapRecorder.updateSym();
+        MapRecorder.initTurn();
         SpecialtyManager.initTurn();
         Debug.bytecodeDebug += " rolest=" + Clock.getBytecodeNum();
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
@@ -88,9 +88,7 @@ public class Robot extends RobotPlayer {
     static void endTurn() throws GameActionException {
         Comms.push();
         Debug.bytecodeDebug += "  compushed=" + Clock.getBytecodeNum();
-        if (rc.isSpawned()) {
-            MapRecorder.recordSym(2000);
-        }
+        MapRecorder.recordSym(1000);
     }
 
     static boolean findCrumb() throws GameActionException {

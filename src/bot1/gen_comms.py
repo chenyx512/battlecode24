@@ -71,6 +71,12 @@ SCHEMA = {
             'loc': 12,
         }
     },
+    'wall': {
+        'slots': 6,
+        'bits': {
+            'loc': 12,
+        }
+    },
 }
 
 def gen_constants():

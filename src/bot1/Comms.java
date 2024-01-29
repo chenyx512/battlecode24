@@ -16,6 +16,7 @@ public class Comms extends RobotPlayer {
     public final static int MYTEAM_SLOTS = 1;
     public final static int OPPTEAM_SLOTS = 1;
     public final static int ENEMY_SLOTS = 3;
+    public final static int WALL_SLOTS = 6;
 
     public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
@@ -783,6 +784,60 @@ public class Comms extends RobotPlayer {
             case 2:
                 buf28 = (buf28 & 57345) | (value << 1);
                 dirty28 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readWallLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf28 & 1) << 11) + ((buf29 & 65504) >>> 5);
+            case 1: return ((buf29 & 31) << 7) + ((buf30 & 65024) >>> 9);
+            case 2: return ((buf30 & 511) << 3) + ((buf31 & 57344) >>> 13);
+            case 3: return (buf31 & 8190) >>> 1;
+            case 4: return ((buf31 & 1) << 11) + ((buf32 & 65504) >>> 5);
+            case 5: return ((buf32 & 31) << 7) + ((buf33 & 65024) >>> 9);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeWallLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf28 = (buf28 & 65534) | ((value & 2048) >>> 11);
+                dirty28 = 1;
+                buf29 = (buf29 & 31) | ((value & 2047) << 5);
+                dirty29 = 1;
+                break;
+            case 1:
+                buf29 = (buf29 & 65504) | ((value & 3968) >>> 7);
+                dirty29 = 1;
+                buf30 = (buf30 & 511) | ((value & 127) << 9);
+                dirty30 = 1;
+                break;
+            case 2:
+                buf30 = (buf30 & 65024) | ((value & 4088) >>> 3);
+                dirty30 = 1;
+                buf31 = (buf31 & 8191) | ((value & 7) << 13);
+                dirty31 = 1;
+                break;
+            case 3:
+                buf31 = (buf31 & 57345) | (value << 1);
+                dirty31 = 1;
+                break;
+            case 4:
+                buf31 = (buf31 & 65534) | ((value & 2048) >>> 11);
+                dirty31 = 1;
+                buf32 = (buf32 & 31) | ((value & 2047) << 5);
+                dirty32 = 1;
+                break;
+            case 5:
+                buf32 = (buf32 & 65504) | ((value & 3968) >>> 7);
+                dirty32 = 1;
+                buf33 = (buf33 & 511) | ((value & 127) << 9);
+                dirty33 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 

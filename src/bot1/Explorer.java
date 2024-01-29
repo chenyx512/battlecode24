@@ -6,6 +6,8 @@ import bot1.fast.FastMath;
 
 public class Explorer extends RobotPlayer {
     private static MapLocation exploreLoc = null;
+    // NOTE that there's currently a bug/feature where all units will go to enemy spawn zone first and then flags
+    // but it cause units to be spread out correctly so I am keeping it
     private static MapLocation flagExploreLoc = null;
 
     static void getEmergencyTarget(int tries) {
