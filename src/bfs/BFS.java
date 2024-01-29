@@ -141,7 +141,7 @@ public class BFS {
         /*********************************************** E ****************************************************/
         if (x < W1){
             new_ml = ml.add(EAST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffE;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -160,7 +160,7 @@ public class BFS {
         /*********************************************** SE ****************************************************/
         if (x < W1 && y > 0){
             new_ml = ml.add(SOUTHEAST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffSE;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -179,7 +179,7 @@ public class BFS {
         /*********************************************** N ****************************************************/
         if (y < H1){
             new_ml = ml.add(NORTH);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffN;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -196,7 +196,7 @@ public class BFS {
         /*********************************************** S ****************************************************/
         if (y > 0){
             new_ml = ml.add(SOUTH);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffS;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -213,7 +213,7 @@ public class BFS {
         /*********************************************** NW ****************************************************/
         if (x > 0 && y < H1){
             new_ml = ml.add(NORTHWEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffNW;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -230,7 +230,7 @@ public class BFS {
         /*********************************************** W ****************************************************/
         if (x > 0){
             new_ml = ml.add(WEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffW;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 
@@ -247,7 +247,7 @@ public class BFS {
         /*********************************************** SW ****************************************************/
         if (x > 0 && y > 0){
             new_ml = ml.add(SOUTHWEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffSW;
 
             if (!MapRecorder.getVisited(new_ml)) return false;
 

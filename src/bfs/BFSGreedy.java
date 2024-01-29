@@ -111,7 +111,7 @@ public class BFSGreedy {
             // aux = code + diffNE;
             new_ml = ml.add(NORTHEAST);
             // TODO: precompute the difference?
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffNE;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -139,7 +139,7 @@ public class BFSGreedy {
         /*********************************************** E ****************************************************/
         if (x < W1){
             new_ml = ml.add(EAST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffE;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -154,7 +154,7 @@ public class BFSGreedy {
         /*********************************************** SE ****************************************************/
         if (x < W1 && y > 0){
             new_ml = ml.add(SOUTHEAST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffSE;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -169,7 +169,7 @@ public class BFSGreedy {
         /*********************************************** N ****************************************************/
         if (y < H1){
             new_ml = ml.add(NORTH);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffN;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -184,7 +184,7 @@ public class BFSGreedy {
         /*********************************************** S ****************************************************/
         if (y > 0){
             new_ml = ml.add(SOUTH);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffS;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -199,7 +199,7 @@ public class BFSGreedy {
         /*********************************************** NW ****************************************************/
         if (x > 0 && y < H1){
             new_ml = ml.add(NORTHWEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffNW;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -214,7 +214,7 @@ public class BFSGreedy {
         /*********************************************** W ****************************************************/
         if (x > 0){
             new_ml = ml.add(WEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffW;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
@@ -229,7 +229,7 @@ public class BFSGreedy {
         /*********************************************** SW ****************************************************/
         if (x > 0 && y > 0){
             new_ml = ml.add(SOUTHWEST);
-            aux = new_ml.x*H + new_ml.y;
+            aux = code + diffSW;
 
             if (MapRecorder.getPassible(new_ml)){ // no wall
                 switch (vars[aux]&0xFFFF){
