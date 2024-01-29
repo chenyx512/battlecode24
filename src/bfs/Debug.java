@@ -4,13 +4,14 @@ package bfs;
 import battlecode.common.*;
 
 public class Debug extends RobotPlayer {
-    static final boolean VERBOSE = false;
+    static final boolean VERBOSE = true;
     public static final boolean INFO = true;
-    public static final boolean SPECIALTY = true;
-    public static final boolean PATHFINDING = true;
-    public static final boolean INDICATORS = false;
-    public static final boolean ASSIGNMENT = true;
-    public static final boolean MICRO = true;
+    public static final boolean SPECIALTY = false;
+    public static final boolean PATHFINDING = false;
+    public static final boolean INDICATORS = true;
+    public static final boolean BFS = true;
+    public static final boolean ASSIGNMENT = false;
+    public static final boolean MICRO = false;
 
     public static String bytecodeDebug = new String();
 
@@ -23,6 +24,7 @@ public class Debug extends RobotPlayer {
     static void flush() {
         rc.setIndicatorString(sb.toString());
         sb = new StringBuilder();
+        bytecodeDebug = new String();
     }
 
     public static void printString(boolean cond, String s) {

@@ -102,6 +102,21 @@ public class Micro extends Robot {
         for (int i = 0; i < 8; ++i) {
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
+        if (micro.needFill == 1) {
+            // if a fill is needed, fill and then recalc where to move
+            MapLocation fillLoc = rc.getLocation().add(micro.dir);
+            if (rc.canFill(fillLoc)) {
+                rc.fill(fillLoc);
+                micro = micros[8];
+                for (int i = 0; i < 8; ++i) {
+                    micros[i].resetAfterFill();
+                    if (micros[i].isBetterThan(micro)) micro = micros[i];
+                }
+                return micro;
+            } else {
+                Debug.failFast("impossible");
+            }
+        }
         return micro;
     }
 
@@ -294,6 +309,7 @@ public class Micro extends Robot {
         Direction dir;
         MapLocation loc;
         int canMove;
+        int blockTeammate;
         int needFill;
         int canAttack;
         int canKill;
@@ -322,12 +338,20 @@ public class Micro extends Robot {
             }
         }
 
+        void resetAfterFill() {
+            needFill = 0;
+            canAttack = 0;
+            canKill = 0;
+            canHealLow = 0;
+            canHealHigh = 0;
+        }
+
         void updateEnemy(RobotInfo enemy) {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(enemy.location);
             if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) {
                 numAttackRange++;
-                if (rc.isActionReady() && needFill == 0) {
+                if (rc.isActionReady() && (needFill == 0 || Cache.nearbyFriends.length - Cache.nearbyEnemies.length > 5)) {
                     canAttack = 1;
                     if (enemy.health <= rc.getAttackDamage() || enemy.hasFlag)
                         canKill = 1;
@@ -342,9 +366,35 @@ public class Micro extends Robot {
             }
         }
 
-        void updateAlly(RobotInfo ally) {
+        void updateAlly(RobotInfo ally) throws GameActionException {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(ally.location);
+            if (dis <= 2 && blockTeammate == 0 && ally.health < Math.min(rc.getHealth(), 700) && state != STATE_DEFENSIVE) {
+                // If I am moving adjacent to a teammate, and we are blocking that teammate's way out from the enemy
+                // that teammate must be allowed to have another way out of the enemy
+                Direction dirOut = closestEnemyLoc.directionTo(ally.location);
+                Direction blockedDir = ally.location.directionTo(loc);
+                if (blockedDir.equals(dirOut) || blockedDir.equals(dirOut.rotateLeft()) || blockedDir.equals(dirOut.rotateRight())) {
+                    // we are blocking the teammate's way out
+                    ok: {
+                        MapLocation a = ally.location.add(dirOut);
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        a = ally.location.add(dirOut.rotateLeft());
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        a = ally.location.add(dirOut.rotateLeft());
+                        if (rc.onTheMap(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !a.equals(loc)) {
+                            break ok;
+                        }
+                        blockTeammate = 1;
+                        Debug.setIndicatorDot(Debug.MICRO, loc, 255, 0, 0);
+                    }
+                }
+            }
+
             if (dis <= 13)
                 allyWithinBlastRange++;
             if (ally.getHealth() < 870 && !SpecialtyManager.isHealer(ally)) {
@@ -368,10 +418,11 @@ public class Micro extends Robot {
         }
 
         boolean isBetterThan(MicroDirection other) {
+            if (canMove != other.canMove) return canMove > other.canMove;
+            if (blockTeammate != other.blockTeammate) return blockTeammate < other.blockTeammate;
             switch (state) {
                 case STATE_BUILDING:
                     // play safe as builder
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canKill != other.numAttackRange - other.canKill)
                         return numAttackRange - canKill < other.numAttackRange - other.canKill;
                     if (canKill != other.canKill)
@@ -389,7 +440,6 @@ public class Micro extends Robot {
 
                 case STATE_DEFENSIVE:
                     // play safe
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (numAttackRangeNext - canKill != other.numAttackRangeNext - other.canKill) {
@@ -412,7 +462,6 @@ public class Micro extends Robot {
                     return minDistanceToEnemy >= other.minDistanceToEnemy;
 
                 case STATE_HOLDING:
-                    if (canMove != other.canMove) return canMove > other.canMove;
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)
@@ -437,7 +486,11 @@ public class Micro extends Robot {
 
 
                 case STATE_OFFENSIVE:
-                    if (canMove != other.canMove) return canMove > other.canMove;
+                    // when surrounding enemy at a tight choke point, someone needs to go in
+                    if (myTotalStrength > 900 && myTotalStrength - oppTotalStrength > 500) {
+                        if (canAttack != other.canAttack)
+                            return canAttack > other.canAttack;
+                    }
                     if (numAttackRange - canAttack != other.numAttackRange - other.canAttack)
                         return numAttackRange - canAttack < other.numAttackRange - other.canAttack;
                     if (canAttack != other.canAttack)

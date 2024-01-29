@@ -58,6 +58,34 @@ public class FlagManager extends RobotPlayer {
                     }
                 }
             }
+
+            if (Robot.isMaster) {
+                for (int i = 3; --i >= 0;) {
+                    if (Comms.readMyflagsExists(i) == 0)
+                        continue;
+                    int cnt = Comms.readMyflagsNotSeenCnt(i);
+                    final int CUTOFF = 80;
+                    cnt = Math.min(cnt + 1, CUTOFF);
+                    Comms.writeMyflagsNotSeenCnt(i, cnt);
+                    if (Comms.readMyflagsDistress(i) == 1) {
+                        MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(i));
+                        MapLocation closestBase = Util.getClosestLoc(flagLoc, Robot.oppSpawnCenters);
+                        if (rc.getRoundNum() % 2 == 0) {
+                            // every 2 rounds, we simulate the flag moving towards enemy base
+                            flagLoc = flagLoc.add(flagLoc.directionTo(closestBase));
+                            Comms.writeMyflagsLoc(i, Util.loc2int(flagLoc));
+                            if (flagLoc.equals(closestBase)) {
+                                // if the flag reaches enemy base, try for at most 10 turns before giving up
+                                cnt = Math.max(CUTOFF - 10, cnt);
+                            }
+                        }
+                        if (cnt >= CUTOFF) {
+                            Debug.println(Debug.INFO, String.format("flag %d not seen, it's gone", i));
+                            Comms.writeMyflagsExists(i, 0);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -72,6 +100,8 @@ public class FlagManager extends RobotPlayer {
                 int flagIndex = getMyFlagIndex(flag);
                 Comms.writeMyflagsExists(flagIndex, 1);
                 Comms.writeMyflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
+                Comms.writeMyflagsNotSeenCnt(flagIndex, 0);
+
                 myFlagSeen[flagIndex] = true;
                 if ((flag.isPickedUp() && rc.getRoundNum() > 200)
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
@@ -88,7 +118,8 @@ public class FlagManager extends RobotPlayer {
                     }
                     Comms.writeOppflagsCarried(flagIndex, 0);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
-                    if (SpecialtyManager.isHealer() && Cache.nearbyFriends.length >= Cache.nearbyEnemies.length) {
+
+                    if (!SpecialtyManager.isBuilder()) {
                         // only healers carry flag cuz they useless
                         if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
                                 && !rc.getLocation().isAdjacentTo(flag.getLocation())) {
@@ -127,6 +158,18 @@ public class FlagManager extends RobotPlayer {
             if (nonpassiblecnt > 3) {
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             }
+
+            // Yukoh TODO:
+            // get to the fucking closest Robot.mySpawnCenter
+            // which one doens't matter
+            if (rc.getID() == 11111) {
+                // print something
+                Debug.printString("xx"); // this will write to the indicator so u can view it in client
+                Debug.println("xxx"); // this will print to stdout, you hvae to run the game from terminal to view it
+//                Debug.setIndicatorDot();
+//                Debug.setIndicatorLine();
+            }
+
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             Comms.writeOppflagsCarried(carriedEnemyFlagIndex, 1);

@@ -104,13 +104,16 @@ public class PathFinder extends Robot {
                 if (canMoveOrFill(dir)) {
                     return dir;
                 }
-                Direction dirL = dir.rotateLeft();
-                if (canMoveOrFill(dirL)) {
-                    return dirL;
-                }
-                Direction dirR = dir.rotateRight();
-                if (canMoveOrFill(dirR)) {
-                    return dirR;
+                MapLocation loc = rc.getLocation().add(dir);
+                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                    Direction dirL = dir.rotateLeft();
+                    if (canMoveOrFill(dirL)) {
+                        return dirL;
+                    }
+                    Direction dirR = dir.rotateRight();
+                    if (canMoveOrFill(dirR)) {
+                        return dirR;
+                    }
                 }
                 currentTurnDir = getTurnDir(dir);
                 // obstacle encountered, rotate and add new dirs to stack
@@ -144,6 +147,18 @@ public class PathFinder extends Robot {
                     Direction dir = rc.getLocation().directionTo(target);
                     if (canMoveOrFill(dir)) {
                         return dir;
+                    }
+
+                    MapLocation loc = rc.getLocation().add(dir);
+                    if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                        Direction dirL = dir.rotateLeft();
+                        if (canMoveOrFill(dirL)) {
+                            return dirL;
+                        }
+                        Direction dirR = dir.rotateRight();
+                        if (canMoveOrFill(dirR)) {
+                            return dirR;
+                        }
                     }
                     dirStack.push(dir);
                 }
@@ -218,10 +233,12 @@ public class PathFinder extends Robot {
 
         static int getTurnDir(Direction dir) throws GameActionException {
             MapLocation loc = rc.getLocation().add(dir);
-            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
-                return FastMath.rand256() % 2;
+//            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
+//                return FastMath.rand256() % 2;
+            Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
+            Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
             if (ansL == -1 || ansR == -1 || ansL == ansR) return FastMath.rand256() % 2;
             if (ansL <= ansR) {
@@ -240,9 +257,30 @@ public class PathFinder extends Robot {
         }
 
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
-            if (rc.canMove(dir))
-                return true;
             MapLocation loc = rc.getLocation().add(dir);
+            if (rc.canMove(dir)) {
+                if (rc.hasFlag())
+                    return true;
+                // it is not ok to move onto a tile to block a teammate's movement
+                for (int i = Cache.nearbyFriends.length; --i >= 0;) {
+                    RobotInfo ally = Cache.nearbyFriends[i];
+                    if (!ally.location.isAdjacentTo(loc))
+                        continue;
+                    boolean ok = false;
+                    for (Direction d: Constants.MOVEABLE_DIRECTIONS) {
+                        MapLocation a = ally.location.add(d);
+                        if (rc.canSenseLocation(a) && rc.sensePassability(a) && (rc.senseRobotAtLocation(a) == null || a.equals(rc.getLocation())) && !loc.equals(a)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+                    if (!ok) {
+                        Debug.setIndicatorDot(Debug.MICRO, rc.getLocation().add(dir), 255, 0, 0);
+                        return false;
+                    }
+                }
+                return true;
+            }
             if (!rc.canSenseLocation(loc))
                 return false;
             if (rc.hasFlag()) {
@@ -251,14 +289,14 @@ public class PathFinder extends Robot {
                 return false;
             }
             MapInfo info = rc.senseMapInfo(loc);
-            if (info.isDam())
+            if (info.isDam() && SetupManager.routeSetterDestID == -1)
                 return true;
             if (info.isWater()) {
                 if (info.getCrumbs() > 0)
                     return true;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
-                if (rc.getCrumbs() < 200 || rc.getRoundNum() <= 150)
+                if (rc.getCrumbs() < 200 || (rc.getRoundNum() <= 150 && SetupManager.routeSetterDestID == -1))
                     return false;
                 int wall_cnt = 0;
                 boolean lastWall = false;
@@ -297,7 +335,7 @@ public class PathFinder extends Robot {
             if (!rc.onTheMap(newLoc))
                 return false;
             if (rc.canSenseLocation(newLoc)) {
-                if (rc.hasFlag()) {
+                if (rc.hasFlag() || SetupManager.routeSetterDestID != -1) {
                     return rc.sensePassability(newLoc);
                 } else {
                     return !rc.senseMapInfo(newLoc).isWall();

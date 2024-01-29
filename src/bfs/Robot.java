@@ -19,13 +19,16 @@ public class Robot extends RobotPlayer {
 
     static void initTurn() throws GameActionException {
         Comms.pull();
-        MapRecorder.updateSym();
+        Debug.bytecodeDebug += " compull=" + Clock.getBytecodeNum();
+        MapRecorder.initTurn();
         SpecialtyManager.initTurn();
+        Debug.bytecodeDebug += " rolest=" + Clock.getBytecodeNum();
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
             SetupManager.initTurn();
         } else {
             RoleAssigner.initTurn(); // takes care of spawning, needs to be before cache, need to be after specialty
         }
+        Debug.bytecodeDebug += " cachest=" + Clock.getBytecodeNum();
         Cache.initTurn();
         FlagManager.initTurn();
         KillRecorder.initTurn();
@@ -43,18 +46,6 @@ public class Robot extends RobotPlayer {
     }
 
     static void play() throws GameActionException {
-//        if (isMaster && rc.getRoundNum() % 10 == 0) {
-//            for (int i = 0; i < 3; i++) {
-//                System.out.printf("id%d exist%d carried%d loc%s oriloc%s\n",
-//                        Comms.readOppflagsId(i), Comms.readOppflagsExists(i), Comms.readOppflagsCarried(i),
-//                        Util.toString(Util.int2loc(Comms.readOppflagsLoc(i))), Util.toString(Util.int2loc(Comms.readOppflagsOriginalLoc(i))));
-//            }
-//            StringBuilder sb = new StringBuilder();
-//            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readMyflagsAssigned(i)));
-//            sb.append(" /ATTK ");
-//            for (int i = 0; i < 3; i++) sb.append(String.format("%d: %2d ", i, Comms.readOppflagsAssigned(i)));
-//            Debug.println(sb.toString());
-//        }
         if (!rc.isSpawned()) {
             return;
         }
@@ -73,10 +64,12 @@ public class Robot extends RobotPlayer {
 
         RoleAssigner.drawDebug();
 
+        Debug.bytecodeDebug += " flagact=" + Clock.getBytecodeNum();
         if (FlagManager.act())
             return;
         if (findCrumb())
             return;
+        Debug.bytecodeDebug += " micro=" + Clock.getBytecodeNum();
         if (Micro.act())
             return;
         if (SpecialtyManager.act())
@@ -94,9 +87,8 @@ public class Robot extends RobotPlayer {
 
     static void endTurn() throws GameActionException {
         Comms.push();
-        if (rc.isSpawned()) {
-            MapRecorder.recordSym(2000);
-        }
+        Debug.bytecodeDebug += "  compushed=" + Clock.getBytecodeNum();
+        MapRecorder.recordSym(1000);
     }
 
     static boolean findCrumb() throws GameActionException {
