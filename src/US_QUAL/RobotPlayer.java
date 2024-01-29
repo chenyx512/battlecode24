@@ -1,7 +1,7 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import US_QUAL.fast.*;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -40,8 +40,7 @@ public strictfp class RobotPlayer {
 //                }
                 int roundEnd = rc.getRoundNum();
                 if (round < roundEnd){
-                    Debug.bytecodeDebug += "  now=" + Clock.getBytecodeNum();
-                    System.out.println("overrun " + round + " to " + roundEnd + rc.getLocation().toString() + Debug.bytecodeDebug);
+                    System.out.println("overrun " + round + " " + rc.getLocation().toString() + Debug.bytecodeDebug);
                     if (Constants.DEBUG_FAIL_FAST) {
                         rc.resign();
                     }

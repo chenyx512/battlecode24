@@ -15,7 +15,25 @@ NUM_CORES_PER_SIDE = NUM_CORES // 2
 
 early_maps = 'DefaultSmall DefaultMedium DefaultLarge DefaultHuge'.split()
 sprint1_maps = 'AceOfSpades Alien Ambush Battlecode24 BigDucksBigPond Canals CH3353C4K3F4CT0RY Duck Fountain Hockey MazeRunner Rivers Snake Soccer SteamboatMickey Yinyang'.split()
-maps = early_maps + sprint1_maps
+sprint2_maps = ['BedWars',
+                'Bunkers',
+                'Checkered',
+                'Diagonal',
+                'Divergent',
+                'EndAround',
+                'FloodGates',
+                'Foxes',
+                'Fusbol',
+                'GaltonBoard',
+                'HeMustBeFreed',
+                'Intercontinental',
+                'Klein',
+                'QueenOfHearts',
+                'QuestionableChess',
+                'Racetrack',
+                'Rainbow',
+                'TreeSearch',]
+maps = early_maps + sprint1_maps + sprint2_maps
 
 def partition_list(maps, n):
     if n <= 0:

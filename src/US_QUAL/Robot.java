@@ -1,4 +1,4 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
 
@@ -20,7 +20,7 @@ public class Robot extends RobotPlayer {
     static void initTurn() throws GameActionException {
         Comms.pull();
         Debug.bytecodeDebug += " compull=" + Clock.getBytecodeNum();
-        MapRecorder.initTurn();
+        MapRecorder.updateSym();
         SpecialtyManager.initTurn();
         Debug.bytecodeDebug += " rolest=" + Clock.getBytecodeNum();
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
@@ -88,7 +88,9 @@ public class Robot extends RobotPlayer {
     static void endTurn() throws GameActionException {
         Comms.push();
         Debug.bytecodeDebug += "  compushed=" + Clock.getBytecodeNum();
-        MapRecorder.recordSym(1000);
+        if (rc.isSpawned()) {
+            MapRecorder.recordSym(2000);
+        }
     }
 
     static boolean findCrumb() throws GameActionException {

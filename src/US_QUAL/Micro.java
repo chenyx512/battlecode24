@@ -1,7 +1,7 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import US_QUAL.fast.*;
 
 public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;

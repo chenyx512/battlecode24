@@ -1,7 +1,7 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
-import bot1.fast.FastMath;
+import US_QUAL.fast.FastMath;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;

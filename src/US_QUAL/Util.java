@@ -1,7 +1,7 @@
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
-import bot1.fast.*;
+import US_QUAL.fast.*;
 
 public class Util extends RobotPlayer {
     public static String toString(Object o) {
@@ -18,14 +18,13 @@ public class Util extends RobotPlayer {
         if (val == 0) {
             return null;
         }
-        val -= 1;
-        return new MapLocation(val / 64, val % 64);
+        return new MapLocation(val / 64 - 1, val % 64 - 1);
     }
 
     static int loc2int(MapLocation loc) {
         if (loc == null)
             return 0;
-        return loc.x * 64 + loc.y + 1;
+        return ((loc.x + 1) * 64) + (loc.y + 1);
     }
 
     static int getClosestID(MapLocation fromLocation, MapLocation[] locations) {

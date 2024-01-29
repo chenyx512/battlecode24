@@ -1,16 +1,16 @@
 // shamelessly copied from 4 musketeer https://github.com/maxwelljones14/BattleCode2023/blob/main/src/MPWorking/Debug.java
-package bot1;
+package US_QUAL;
 
 import battlecode.common.*;
 
 public class Debug extends RobotPlayer {
-    static final boolean VERBOSE = true;
+    static final boolean VERBOSE = false;
     public static final boolean INFO = true;
     public static final boolean SPECIALTY = true;
     public static final boolean PATHFINDING = true;
-    public static final boolean INDICATORS = true;
+    public static final boolean INDICATORS = false;
     public static final boolean ASSIGNMENT = true;
-    public static final boolean MICRO = false;
+    public static final boolean MICRO = true;
 
     public static String bytecodeDebug = new String();
 
