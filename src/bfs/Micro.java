@@ -394,6 +394,7 @@ public class Micro extends Robot {
                     }
                 }
             }
+
             if (dis <= 13)
                 allyWithinBlastRange++;
             if (ally.getHealth() < 870 && !SpecialtyManager.isHealer(ally)) {

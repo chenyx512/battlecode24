@@ -148,6 +148,7 @@ public class PathFinder extends Robot {
                     if (canMoveOrFill(dir)) {
                         return dir;
                     }
+
                     MapLocation loc = rc.getLocation().add(dir);
                     if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
                         Direction dirL = dir.rotateLeft();

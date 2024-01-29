@@ -58,6 +58,7 @@ public class FlagManager extends RobotPlayer {
                     }
                 }
             }
+
             if (Robot.isMaster) {
                 for (int i = 3; --i >= 0;) {
                     if (Comms.readMyflagsExists(i) == 0)
@@ -100,6 +101,7 @@ public class FlagManager extends RobotPlayer {
                 Comms.writeMyflagsExists(flagIndex, 1);
                 Comms.writeMyflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
                 Comms.writeMyflagsNotSeenCnt(flagIndex, 0);
+
                 myFlagSeen[flagIndex] = true;
                 if ((flag.isPickedUp() && rc.getRoundNum() > 200)
                         || Cache.nearbyEnemies.length > Cache.nearbyFriends.length) {
@@ -116,6 +118,7 @@ public class FlagManager extends RobotPlayer {
                     }
                     Comms.writeOppflagsCarried(flagIndex, 0);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
+
                     if (!SpecialtyManager.isBuilder()) {
                         // only healers carry flag cuz they useless
                         if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
@@ -155,6 +158,7 @@ public class FlagManager extends RobotPlayer {
             if (nonpassiblecnt > 3) {
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             }
+
             // Yukoh TODO:
             // get to the fucking closest Robot.mySpawnCenter
             // which one doens't matter
@@ -165,6 +169,7 @@ public class FlagManager extends RobotPlayer {
 //                Debug.setIndicatorDot();
 //                Debug.setIndicatorLine();
             }
+
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             Comms.writeOppflagsCarried(carriedEnemyFlagIndex, 1);

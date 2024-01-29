@@ -1,6 +1,7 @@
 package bfs;
 
 import battlecode.common.*;
+
 import bfs.fast.FastLocSet;
 
 public class MapRecorder extends RobotPlayer {
@@ -17,9 +18,11 @@ public class MapRecorder extends RobotPlayer {
     public static final char WALL_BIT = 1 << 1;
 
     // fun fact: this costs 1 bytecode, but declaring array costs 3600
+
     // if val[x] = 0, it is unseen
     // if val[x] = 1, there is no wall
     // if val[x] = 2, there is wall
+
     public static char[] vals = Constants.STRING_LEN_4200.toCharArray();
 
     // bit 0b100 means rotational eliminated, 0b010 vertical, 0b001 horizontal
@@ -27,6 +30,7 @@ public class MapRecorder extends RobotPlayer {
 
     public static boolean getPassible(MapLocation loc) {
         int val = vals[Util.loc2int(loc)];
+
         if (val > 0)
             return val != WALL_BIT;
         val = vals[Util.loc2int(getSymmetricLoc(loc))];
@@ -70,6 +74,7 @@ public class MapRecorder extends RobotPlayer {
             MapInfo info = infos[i];
             MapLocation loc = info.getMapLocation();
             int locID = Util.loc2int(loc);
+
             if (vals[locID] != 0)
                 continue;
 
@@ -94,6 +99,7 @@ public class MapRecorder extends RobotPlayer {
                         continue;
                     MapLocation symloc = getSymmetricLoc(loc, 0b111 - sym);
                     int symVal = vals[Util.loc2int(symloc)];
+
                     if (symVal == 0) {
                         continue;
                     }
@@ -158,6 +164,7 @@ public class MapRecorder extends RobotPlayer {
             Robot.oppSpawnCenters[0] = getSymmetricLoc(Robot.mySpawnCenters[0]);
             Robot.oppSpawnCenters[1] = getSymmetricLoc(Robot.mySpawnCenters[1]);
             Robot.oppSpawnCenters[2] = getSymmetricLoc(Robot.mySpawnCenters[2]);
+
             switch (symmetry) {
                 case 0b011: case 0b101: case 0b110:
                     symConfimred = true;

@@ -34,6 +34,7 @@ public strictfp class RobotPlayer {
                 Robot.play();
                 Debug.bytecodeDebug += "  BCPLAY=" + Clock.getBytecodeNum();
                 Robot.endTurn();
+
                 Debug.bytecodeDebug += "  BCEND=" + Clock.getBytecodeNum();
 //                if (Robot.isMaster) {
 //                    Debug.println(String.format("%s: %s", Util.toString(rc.getLocation()), Debug.bytecodeDebug));
@@ -42,6 +43,7 @@ public strictfp class RobotPlayer {
                 if (round < roundEnd){
                     Debug.bytecodeDebug += "  now=" + Clock.getBytecodeNum();
                     System.out.println("overrun " + round + " to " + roundEnd + rc.getLocation().toString() + Debug.bytecodeDebug);
+
                     if (Constants.DEBUG_FAIL_FAST) {
                         rc.resign();
                     }
