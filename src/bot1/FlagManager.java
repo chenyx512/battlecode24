@@ -170,13 +170,13 @@ public class FlagManager extends RobotPlayer {
             for (int i = 3; --i >= 0;) {
                 if (Comms.readMyflagsExists(i) == 1 && Comms.readMyflagsDistress(i) == 1) {
                     MapLocation loc = Util.int2loc(Comms.readMyflagsLoc(i));
-                    if (rc.getLocation().isWithinDistanceSquared(loc, 2)
-                            && Cache.nearbyEnemies.length == 0
-                            && (Comms.readMyflagsOriginalLoc(i) == Comms.readMyflagsLoc(i) || !myFlagSeen[i])
-                    ) {
-                        // reset only if the flag has returned
-                        Comms.writeMyflagsDistress(i, 0);
-                        Comms.writeMyflagsLoc(i, Comms.readMyflagsOriginalLoc(i));
+                    if (Cache.nearbyEnemies.length == 0) {
+                        // if the flag has returned or we are next to the reported loc
+                        if (myFlagSeen[i] && Comms.readMyflagsOriginalLoc(i) == Comms.readMyflagsLoc(i) ||
+                            rc.getLocation().isWithinDistanceSquared(loc, 4)) {
+                            Comms.writeMyflagsDistress(i, 0);
+                            Comms.writeMyflagsLoc(i, Comms.readMyflagsOriginalLoc(i));
+                        }
                     }
                 }
             }
