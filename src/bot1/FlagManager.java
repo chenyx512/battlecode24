@@ -117,7 +117,6 @@ public class FlagManager extends RobotPlayer {
                     Comms.writeOppflagsCarried(flagIndex, 0);
                     Comms.writeOppflagsLoc(flagIndex, Util.loc2int(flag.getLocation()));
                     if (!SpecialtyManager.isBuilder()) {
-                        // only healers carry flag cuz they useless
                         if (Comms.readOppflagsLoc(flagIndex) != Comms.readOppflagsOriginalLoc(flagIndex)
                                 && !rc.getLocation().isAdjacentTo(flag.getLocation())) {
                             // a dropped flag away from us, pick it up ASAP
@@ -138,22 +137,19 @@ public class FlagManager extends RobotPlayer {
         }
         if (hasFlag) {
             lastFlagCarryRound = rc.getRoundNum();
-            if (Cache.closestEnemy != null && Cache.nearbyFriends.length < 2) {
+            if (Cache.closestEnemy != null) {
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(Cache.closestEnemy));
+            } else {
+                // If I am stuck in water, call for help
+                if (PathFinder.stuckCnt > 4) {
+                    Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
+                } else {
+                    Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
+                }
+            }
+            if (Cache.closestEnemy != null && Cache.nearbyFriends.length < 2) {
                 PathFinder.tryMoveDir(Cache.closestEnemy.directionTo(rc.getLocation()));
                 flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
-            } else {
-                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
-            }
-            // If I am stuck in water, call for help
-            int nonpassiblecnt = 0;
-            for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {
-                MapLocation loc = rc.getLocation().add(dir);
-                if (!rc.canSenseLocation(loc) || !rc.sensePassability(loc))
-                    nonpassiblecnt++;
-            }
-            if (nonpassiblecnt > 3) {
-                Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             }
             PathFinder.move(flagCarryDestination);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));

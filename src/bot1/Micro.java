@@ -184,32 +184,56 @@ public class Micro extends Robot {
             canBuild = true;
         if (!canBuild)
             return;
-        TrapType trapType = TrapType.STUN;
+
+        TrapType trapType = SpecialtyManager.isBuilder() && rc.getCrumbs() > 5000? TrapType.EXPLOSIVE : TrapType.STUN;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
-        MapLocation loc = rc.getLocation().add(dir);
-        MapLocation loc2 = rc.getLocation().add(dir.rotateLeft());
-        MapLocation loc3 = rc.getLocation().add(dir.rotateRight());
-        MapLocation nextLoc = loc.add(dir);
-        // avoid dropping trap when there is obstacle in between
-        if (rc.canSenseLocation(nextLoc) && !rc.sensePassability(nextLoc))
-            return;
-        boolean canStun = true;
-        for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
-            MapLocation newLoc = rc.getLocation().add(d);
-            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() != TrapType.NONE) {
-                canStun = false;
-                break;
+        MapLocation loc;
+        loc = rc.getLocation();
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+            if (canTrap(trapType, loc)) {
+                rc.build(trapType, loc);
             }
         }
-        if (canStun && loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
-            rc.build(trapType, loc);
-        } else if (canStun && rc.getLocation().isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, rc.getLocation())) {
-            rc.build(trapType, rc.getLocation());
-        } else if (canStun && loc2.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc2)) {
-            rc.build(trapType, loc2);
-        } else if (canStun && loc3.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc3)) {
-            rc.build(trapType, loc3);
+        loc = rc.getLocation().add(dir);
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+            if (canTrap(trapType, loc)) {
+                rc.build(trapType, loc);
+            }
         }
+        loc = rc.getLocation().add(dir.rotateLeft());
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+            if (canTrap(trapType, loc)) {
+                rc.build(trapType, loc);
+            }
+        }
+        loc = rc.getLocation().add(dir.rotateRight());
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+            if (canTrap(trapType, loc)) {
+                rc.build(trapType, loc);
+            }
+        }
+    }
+
+    private static boolean canTrap(TrapType trapType, MapLocation loc) throws GameActionException {
+        if (rc.getCrumbs() > 5000 && trapType == TrapType.EXPLOSIVE)
+            return true;
+        MapLocation x;
+        x = loc.add(Direction.NORTH);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.NORTHEAST);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.EAST);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.SOUTHEAST);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.SOUTH);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.SOUTHWEST);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.WEST);
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        x = loc.add(Direction.NORTHWEST);
+        return true;
     }
 
     public static void tryHeal() throws GameActionException {

@@ -173,7 +173,16 @@ public class RoleAssigner extends RobotPlayer {
             if (Comms.readOppflagsCarried(flagid) == 1) {
                 MapLocation flagloc = Util.int2loc(Comms.readOppflagsLoc(flagid));
                 if (Comms.readOppflagsEscortLoc(flagid) == 0) {
-                    return Comms.readOppflagsAssigned(flagid) < 5? 1 : -1;
+                    if (Robot.getDisToMyClosestSpawnCenter(flagloc) <= Util.getClosestDis(flagloc, Robot.oppSpawnCenters)) {
+                        // close to friendly, no escort
+                        final int NEEDED = 5;
+                        if (role == newRole) return Comms.readOppflagsAssigned(flagid) <= NEEDED? 1 : -1;
+                        return Comms.readOppflagsAssigned(flagid) < NEEDED? 1 : -1;
+                    } else {
+                        final int NEEDED = 15;
+                        if (role == newRole) return Comms.readOppflagsAssigned(flagid) <= NEEDED? getDistressScore(Comms.readOppflagsAssigned(flagid), flagloc) : -1;
+                        return Comms.readOppflagsAssigned(flagid) < NEEDED? getDistressScore(Comms.readOppflagsAssigned(flagid), flagloc) : -1;
+                    }
                 } else {
                     return getDistressScore(Comms.readOppflagsAssigned(flagid), flagloc);
                 }

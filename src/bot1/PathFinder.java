@@ -5,6 +5,8 @@ import bot1.fast.*;
 
 public class PathFinder extends Robot {
     private static MapLocation target = null;
+    private static MapLocation stayawayFrom = null;
+    public static int stuckCnt;
 
     static void randomMove() throws GameActionException {
         int starting_i = FastMath.rand256() % Constants.MOVEABLE_DIRECTIONS.length;
@@ -39,22 +41,25 @@ public class PathFinder extends Robot {
                 rc.fill(loc);
             }
         }
-        MapLocation escortLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
+        MapLocation escortLoc = Util.int2loc(Comms.readOppflagsEscortLoc(flagid));
         if (!rc.isMovementReady())
             return;
+        if (escortLoc != null) {
+            target = escortLoc;
+        } else {
+            Direction protectDir = Constants.MOVEABLE_DIRECTIONS[SpecialtyManager.duckSeqID % 8];
+            if (rc.getLocation().isWithinDistanceSquared(carrierLoc, 16) && Comms.readOppflagsEscortLoc(flagid) == 0 && Cache.closestEnemy != null) {
+                // if I see an enemy around while none reported, call distress
+                Comms.writeOppflagsEscortLoc(flagid, Util.loc2int(Cache.closestEnemy));
+            }
+            target = carrierLoc.add(protectDir).add(protectDir).add(protectDir);
+        }
         // if I am right next to the escorted, move away to make room
-        // otherwize, try path to a direction behind the escorted, unless I am gonna be adjacent, then I stop
         if (rc.getLocation().isAdjacentTo(carrierLoc)) {
             tryMoveDir(rc.getLocation().directionTo(carrierLoc).opposite());
             return;
         }
-        if (escortLoc != null) {
-            target = escortLoc;
-        } else {
-            MapLocation closestHome = Util.getClosestLoc(carrierLoc, Robot.mySpawnCenters);
-            Direction protectDir = carrierLoc.directionTo(closestHome).opposite();
-            target = carrierLoc.add(protectDir).add(protectDir);
-        }
+        stayawayFrom = carrierLoc;
         Direction dir = BugNav.getMoveDir();
         if (dir != null) {
             tryMove(dir);
@@ -66,6 +71,7 @@ public class PathFinder extends Robot {
         if (!rc.isMovementReady() || loc == null)
             return;
         target = loc;
+        stayawayFrom = null;
         Direction dir = BugNav.getMoveDir();
         if (dir == null)
             return;
@@ -76,7 +82,6 @@ public class PathFinder extends Robot {
     static class BugNav {
         static DirectionStack dirStack = new DirectionStack();
         static MapLocation prevTarget = null; // previous target
-        private static int stuckCnt;
         private static FastLocSet visistedLocs = new FastLocSet();
         static int currentTurnDir = 0;
         static final int MAX_DEPTH = 20;
@@ -261,6 +266,8 @@ public class PathFinder extends Robot {
 
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
             MapLocation loc = rc.getLocation().add(dir);
+            if (stayawayFrom != null && loc.isAdjacentTo(stayawayFrom))
+                return false;
             if (rc.canMove(dir)) {
                 if (rc.hasFlag())
                     return true;
