@@ -16,12 +16,14 @@ public class MapRecorder extends RobotPlayer {
 
     public static final char SEEN_BIT = 1;
     public static final char WALL_BIT = 1 << 1;
+    public static final char CLOSE_TO_HQ_BIT = 1 << 2;
 
     // fun fact: this costs 1 bytecode, but declaring array costs 3600
 
     // if val[x] = 0, it is unseen
     // if val[x] = 1, there is no wall
     // if val[x] = 2, there is wall
+    // if val[x] & 0b0100 = 4, it is close to HQ
 
     public static char[] vals = Constants.STRING_LEN_4200.toCharArray();
 
@@ -208,5 +210,15 @@ public class MapRecorder extends RobotPlayer {
         }
         assert false;
         return null;
+    }
+
+    public static boolean closeToHQ(MapLocation loc) {
+        int locID = Util.loc2int(loc);
+        return (vals[locID] & CLOSE_TO_HQ_BIT) == CLOSE_TO_HQ_BIT;
+    }
+
+    public static void updateCloseToHQ(MapLocation loc) {
+        int locID = Util.loc2int(loc);
+        vals[locID] |= CLOSE_TO_HQ_BIT;
     }
 }
