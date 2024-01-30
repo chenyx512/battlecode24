@@ -4,6 +4,8 @@ import battlecode.common.*;
 import bot1.fast.*;
 import scala.collection.immutable.Stream;
 
+import java.nio.file.Path;
+
 public class PathFinder extends Robot {
     private static MapLocation target = null;
     private static int stuckCnt;
@@ -33,7 +35,7 @@ public class PathFinder extends Robot {
 
     static public void escort(int flagid) throws GameActionException {
         /* To stay 1 tile away from the escorted duck to prevent congestion */
-        Debug.printString(Debug.PATHFINDING, String.format("escort%d", flagid));
+        Debug.printString(Debug.INFO, String.format("escort%d", flagid));
         MapLocation carrierLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
         MapLocation escortLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
         if (!rc.isMovementReady())
@@ -61,6 +63,7 @@ public class PathFinder extends Robot {
                 tryMove(dir);
             }
         }
+        Micro.tryHeal();
     }
 
     static public void move(MapLocation loc) throws GameActionException {
@@ -70,8 +73,9 @@ public class PathFinder extends Robot {
         Direction dir = BugNav.getMoveDir();
         if (dir == null)
             return;
-        Debug.printString(Debug.PATHFINDING, String.format("move%s", loc.toString()));
+        Debug.printString(Debug.INFO, String.format("move%s", loc.toString()));
         tryMove(dir);
+        Micro.tryHeal();
     }
 
     static class BugNav {

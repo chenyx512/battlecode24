@@ -116,8 +116,9 @@ public class Micro extends Robot {
             canBeAttacked |= micros[i].canBeAttackedNext;
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
-//        if (canBeAttacked == 0)
-//            return null;
+        if (canBeAttacked == 0 && canIgnoreEnemy()) {
+            return null;
+        }
         if (micro.needFill == 1) {
             // if a fill is needed, fill and then recalc where to move
             MapLocation fillLoc = rc.getLocation().add(micro.dir);
@@ -134,6 +135,19 @@ public class Micro extends Robot {
             }
         }
         return micro;
+    }
+
+    private static boolean canIgnoreEnemy() throws GameActionException {
+        BFS20.fill(); // this costs 2500 bytecode
+        // we resense since cached enemies may not be in range
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, oppTeam);
+        for (int i = enemies.length; --i >= 0;) {
+            MapLocation loc = enemies[i].location;
+            if (BFS20.getDis(loc) < 999) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void tryAttack() throws GameActionException {
@@ -192,7 +206,7 @@ public class Micro extends Robot {
         }
     }
 
-    private static void tryHeal() throws GameActionException {
+    public static void tryHeal() throws GameActionException {
         if (!rc.isActionReady())
             return;
         if (!SpecialtyManager.canHeal())

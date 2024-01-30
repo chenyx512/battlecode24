@@ -7,9 +7,9 @@ public class Debug extends RobotPlayer {
     static final boolean VERBOSE = true;
     public static final boolean INFO = true;
     public static final boolean SPECIALTY = true;
-    public static final boolean PATHFINDING = true;
+    public static final boolean PATHFINDING = false;
     public static final boolean INDICATORS = true;
-    public static final boolean ASSIGNMENT = true;
+    public static final boolean ASSIGNMENT = false;
     public static final boolean MICRO = true;
 
     public static String bytecodeDebug = new String();
