@@ -60,18 +60,18 @@ public class BFSManager {
                     return;
                 }
                 if (bfsGreedy[i].reset){
-                    Constants.indicatorString += " (reset + "+ Clock.getBytecodeNum();
+                    Debug.println(" (reset + "+ Clock.getBytecodeNum());
                     bfsGreedy[i].applyReset();
-                    Constants.indicatorString += " " + Clock.getBytecodeNum() + ") ";
+                    Debug.println(" " + Clock.getBytecodeNum() + ") ");
                     return;
                 }
             }
             return;
         }
-        if (rc.getRoundNum() <= Robot.roundBirth) return;
+        // TODO: do we need this? if (rc.getRoundNum() <= Robot.roundBirth) return;
         bfsList[index] = new BFS(buffer[index]);
         bfsGreedy[index] = new BFSGreedy(bfsList[index]);
-        Robot.bytecodeDebug += " (initialized) ";
+        Debug.println(" (initialized) ");
         index++;
     }
 
@@ -100,10 +100,10 @@ public class BFSManager {
         if (bfsIndex >= index) return null;
         currentBfsIndex = bfsIndex;
         MapLocation myLoc = rc.getLocation();
+        MapLocation newLoc;
 
         Direction bestDirectionMovable = Direction.CENTER;
-        MapLocation newLoc = AdjacentTiles.dirDanger[Direction.CENTER.ordinal()].endLoc;
-        int bestDistMovable = getDistance(newLoc);
+        int bestDistMovable = getDistance(myLoc);
         if (bestDistMovable == 0) return null;
 
         int initialDist = bestDistMovable;
@@ -113,9 +113,13 @@ public class BFSManager {
         // TODO: unroll loop
         for (Direction d : dirs){
             if (d == Direction.CENTER) continue;
-            if (!AdjacentTiles.dirDanger[d.ordinal()].closeToEnemyHQ){
+
+            newLoc = myLoc.add(d);
+            // if (!AdjacentTiles.dirDanger[d.ordinal()].closeToEnemyHQ){
+            if (!MapRecorder.closeToHQ(newLoc)){
+                int newDist = getDistance(newLoc);
+
                 if (rc.canMove(d)){
-                    int newDist = getDistance(AdjacentTiles.dirDanger[d.ordinal()].endLoc);
                     if (newDist != 0 && newDist <= bestDistMovable) {
                         bestDistMovable = newDist;
                         bestDirectionMovable = d;
@@ -126,13 +130,11 @@ public class BFSManager {
                     }
                 }
                 else{
-                    newLoc = myLoc.add(d);
                     if (!rc.onTheMap(newLoc)) continue;
                     RobotInfo r = rc.senseRobotAtLocation(newLoc);
                     // if (r != null && r.getType() != RobotType.HEADQUARTERS){
                     if (r != null){
                         //rc.setIndicatorDot(newLoc, 255, 255, 0);
-                        int newDist = getDistance(AdjacentTiles.dirDanger[d.ordinal()].endLoc);
                         if (newDist != 0 && newDist < bestGreedyDist) {
                             bestGreedyDist = newDist;
                             //greedyDist = d;
@@ -152,7 +154,7 @@ public class BFSManager {
                     default : rc.setIndicatorDot(l, 150, 150, 150); break;
                 }
             }*/
-            //Constants.indicatorString += "RESETTING. " + "DC: " + initialDist + ". DG: " + bestGreedyDist + ". BD: " + greedyDist.name() + " " + rc.getLocation().x + " " + rc.getLocation().y;
+            // Debug.println("RESETTING. " + "DC: " + initialDist + ". DG: " + bestGreedyDist + ". BD: " + greedyDist.name() + " " + rc.getLocation().x + " " + rc.getLocation().y);
             bfsGreedy[currentBfsIndex].reset();
             return null;
         }
@@ -167,8 +169,8 @@ public class BFSManager {
             if (d == 0) return d2;
             if (d2 != d){
                 bfsGreedy[currentBfsIndex].reset();
-                //Constants.indicatorString += "RESETTING!! ";
-                //rc.setIndicatorDot(loc, 255, 255, 0);
+                // Debug.println("RESETTING!! ");
+                // rc.setIndicatorDot(loc, 255, 255, 0);
                 return d;
             }
             return d2;

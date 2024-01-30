@@ -53,6 +53,7 @@ public class BFSGreedy {
 
     void init(){
         init = true;
+        // TODO: yx more efficient initialization
         vars = new int[trueBFS.vars.length];
     }
 
