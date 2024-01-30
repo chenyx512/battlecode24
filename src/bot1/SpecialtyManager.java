@@ -47,8 +47,8 @@ public class SpecialtyManager extends Robot {
         }
         if (!rc.isActionReady())
             return false;
-        boolean useWater = rc.getRoundNum() > 200 && rc.senseMapInfo(rc.getLocation()).getTeamTerritory() == oppTeam;
-        boolean needLevelUp = buildLevel < 6;
+        boolean useWater = rc.getRoundNum() > 200 && rc.senseMapInfo(rc.getLocation()).getTeamTerritory() != myTeam;
+        boolean needLevelUp = buildLevel < 4;
         for (int i = 8; --i >= 0;) {
             MapLocation loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
             if (needLevelUp && (loc.x + loc.y) % 2 == 0 && rc.canDig(loc)) {

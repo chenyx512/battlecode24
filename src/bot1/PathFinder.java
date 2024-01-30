@@ -2,14 +2,9 @@ package bot1;
 
 import battlecode.common.*;
 import bot1.fast.*;
-import scala.collection.immutable.Stream;
-
-import java.nio.file.Path;
 
 public class PathFinder extends Robot {
     private static MapLocation target = null;
-    private static int stuckCnt;
-    private static MapLocation myLastLoc;
 
     static void randomMove() throws GameActionException {
         int starting_i = FastMath.rand256() % Constants.MOVEABLE_DIRECTIONS.length;
@@ -35,8 +30,15 @@ public class PathFinder extends Robot {
 
     static public void escort(int flagid) throws GameActionException {
         /* To stay 1 tile away from the escorted duck to prevent congestion */
-        Debug.printString(Debug.INFO, String.format("escort%d", flagid));
         MapLocation carrierLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
+        if (rc.getLocation().isWithinDistanceSquared(carrierLoc, 8)) {
+            // fill the water next to flag carrier to unstuck it
+            Direction dir = rc.getLocation().directionTo(carrierLoc);
+            MapLocation loc = rc.getLocation().add(dir);
+            if (rc.canFill(loc)) {
+                rc.fill(loc);
+            }
+        }
         MapLocation escortLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
         if (!rc.isMovementReady())
             return;
@@ -55,13 +57,7 @@ public class PathFinder extends Robot {
         }
         Direction dir = BugNav.getMoveDir();
         if (dir != null) {
-            if(rc.getLocation().add(dir).isAdjacentTo(carrierLoc)) {
-                if (rc.canFill(rc.getLocation().add(dir))) {
-                    rc.fill(rc.getLocation().add(dir));
-                }
-            } else {
-                tryMove(dir);
-            }
+            tryMove(dir);
         }
         Micro.tryHeal();
     }
@@ -73,7 +69,6 @@ public class PathFinder extends Robot {
         Direction dir = BugNav.getMoveDir();
         if (dir == null)
             return;
-        Debug.printString(Debug.INFO, String.format("move%s", loc.toString()));
         tryMove(dir);
         Micro.tryHeal();
     }
@@ -81,6 +76,8 @@ public class PathFinder extends Robot {
     static class BugNav {
         static DirectionStack dirStack = new DirectionStack();
         static MapLocation prevTarget = null; // previous target
+        private static int stuckCnt;
+        private static FastLocSet visistedLocs = new FastLocSet();
         static int currentTurnDir = 0;
         static final int MAX_DEPTH = 20;
         static final int BYTECODE_CUTOFF = 6000;
@@ -98,13 +95,14 @@ public class PathFinder extends Robot {
             if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
                 resetPathfinding();
             }
+            Debug.printString(Debug.INFO, String.format("move%sst%d", target, stuckCnt));
             prevTarget = target;
-            if (myLastLoc == rc.getLocation()) {
+            if (visistedLocs.contains(rc.getLocation())) {
                 stuckCnt++;
             } else {
                 stuckCnt = 0;
+                visistedLocs.add(rc.getLocation());
             }
-            myLastLoc = rc.getLocation();
             if (dirStack.size == 0) {
                 Direction dir = rc.getLocation().directionTo(target);
                 if (canMoveOrFill(dir)) {
@@ -258,7 +256,7 @@ public class PathFinder extends Robot {
         static void resetPathfinding() {
             dirStack.clear();
             stuckCnt = 0;
-            myLastLoc = null;
+            visistedLocs.clear();
         }
 
         static boolean canMoveOrFill(Direction dir) throws GameActionException {
@@ -291,7 +289,7 @@ public class PathFinder extends Robot {
             if (rc.hasFlag()) {
                 RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null && r.team == myTeam) // trust me we do bump into opponent robot lmao
-                    return stuckCnt < 10;
+                    return stuckCnt < 5;
                 return false;
             }
             MapInfo info = rc.senseMapInfo(loc);
@@ -302,7 +300,11 @@ public class PathFinder extends Robot {
                     return true;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
-                if (rc.getCrumbs() < 200 || (rc.getRoundNum() <= 150 && SetupManager.routeSetterDestID == -1))
+                // don't waste crumb the first 150 rounds unless routesetter
+                if (rc.getRoundNum() <= 150 && SetupManager.routeSetterDestID == -1)
+                    return false;
+                // save crumb unless stuck when we don't have much (save some for micro water removal)
+                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 5)
                     return false;
                 int wall_cnt = 0;
                 boolean lastWall = false;

@@ -371,7 +371,8 @@ public class Micro extends Robot {
         }
 
         void resetAfterFill() {
-            needFill = 0;
+            canMove = dir == Direction.CENTER || rc.canMove(dir)? 1 : 0;
+            needFill= 0;
             canAttack = 0;
             canAttackNext = 0;
             shouldPlanStepAttack = false;
@@ -478,6 +479,8 @@ public class Micro extends Robot {
         boolean isBetterThan(MicroDirection other) {
             if (canMove != other.canMove) return canMove > other.canMove;
             if (blockTeammate != other.blockTeammate) return blockTeammate < other.blockTeammate;
+            if (state != STATE_OFFENSIVE && needFill != other.needFill) // don't fill unless offensive
+                return needFill < other.needFill;
             switch (state) {
                 case STATE_BUILDING:
                     // play safe as builder
@@ -490,7 +493,7 @@ public class Micro extends Robot {
                     if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
                     }
-                    if (builderDis != other.builderDis)
+                    if (SpecialtyManager.isBuilder() && builderDis != other.builderDis)
                         return builderDis > other.builderDis;
                     if (minDistanceToAlly != other.minDistanceToAlly)
                         return minDistanceToAlly < other.minDistanceToAlly;
@@ -507,6 +510,8 @@ public class Micro extends Robot {
                         return canAttack > other.canAttack;
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
+                    if (SpecialtyManager.isBuilder() && builderDis != other.builderDis)
+                        return builderDis > other.builderDis;
                     if (canHealHigh != other.canHealHigh)
                         return canHealHigh > other.canHealHigh;
                     if (canHealLow != other.canHealLow)
@@ -530,6 +535,8 @@ public class Micro extends Robot {
                     if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
                     }
+                    if (SpecialtyManager.isBuilder() && builderDis != other.builderDis)
+                        return builderDis > other.builderDis;
                     if (canHealHigh != other.canHealHigh)
                         return canHealHigh > other.canHealHigh;
                     if (canHealLow != other.canHealLow)
