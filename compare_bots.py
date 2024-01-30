@@ -94,7 +94,6 @@ def run_matches(player1: str, player2: str, mymaps: list[str], timestamp: str) -
         f"-PteamA={player1}",
         f"-PteamB={player2}",
         f"-Pmaps={','.join(mymaps)}",
-        "-Pverbose=false",
         # f"-PreplayPath=replays/run-{timestamp}-%TEAM_A%-vs-%TEAM_B%.bc24"
     ]
 
@@ -120,6 +119,7 @@ def run_matches(player1: str, player2: str, mymaps: list[str], timestamp: str) -
             reason = reason[1]
             if 'resigned' in reason:
                 reason = 'resign!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+                print('\n'.join(lines))
             global counter
             with counter.get_lock():
                 counter.value += 1
@@ -132,6 +132,7 @@ def run_matches(player1: str, player2: str, mymaps: list[str], timestamp: str) -
 
             print(f"{prefix} {current_result[1]} wins in {current_result[2]} rounds as {winner_color} on {current_map}: {reason}")
             winners_by_map[current_map] = current_result[1]
+            lines = []
 
     if proc.wait() != 0:
         result["type"] = "error"

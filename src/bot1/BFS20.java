@@ -1741,7 +1741,6 @@ public class BFS20 extends RobotPlayer {
                     }
                     break;
         }
-        Debug.failFast(String.format("cur %s dx %d dy %d", Util.toString(rc.getLocation()), target_dx, target_dy));
         return 9999999;
         
     }

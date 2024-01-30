@@ -205,7 +205,6 @@ def gen_getdis(radius):
                     break;"""
     out += f"""
         }}
-        Debug.failFast("Impossible");
         return 9999999;
         """
     return out

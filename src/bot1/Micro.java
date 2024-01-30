@@ -20,12 +20,14 @@ public class Micro extends Robot {
         assert (GameConstants.ATTACK_RADIUS_SQUARED == GameConstants.HEAL_RADIUS_SQUARED) && (GameConstants.ATTACK_RADIUS_SQUARED == 4);
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
             if (SpecialtyManager.isBuilder() && rc.getRoundNum() > 150) {
+                BFS20.fill(); // this costs 2500 bytecode
                 tryDropTrap();
             }
             return false;
         }
 
         if (Cache.nearbyEnemies.length > 0) {
+            BFS20.fill(); // this costs 2500 bytecode
             tryAttack();
             tryDropTrap();
             bestMicro = getBestMicro();
@@ -138,11 +140,8 @@ public class Micro extends Robot {
     }
 
     private static boolean canIgnoreEnemy() throws GameActionException {
-        BFS20.fill(); // this costs 2500 bytecode
-        // we resense since cached enemies may not be in range
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, oppTeam);
-        for (int i = enemies.length; --i >= 0;) {
-            MapLocation loc = enemies[i].location;
+        for (int i = Cache.nearbyEnemies.length; --i >= 0;) {
+            MapLocation loc = Cache.nearbyEnemies[i].location;
             if (BFS20.getDis(loc) < 999) {
                 return false;
             }
@@ -177,8 +176,15 @@ public class Micro extends Robot {
             return;
         if (!rc.isActionReady() || Cache.closestEnemy == null)
             return;
-        if (Cache.nearbyEnemies.length < 6 || Cache.nearbyFriends.length < 4)
+        if (BFS20.getDis(Cache.closestEnemy) > 999) // if the enemy is not reachable, don't trap
             return;
+
+        boolean canBuild = SpecialtyManager.isBuilder() || FlagManager.urgent;
+        if (KillRecorder.cntDiff < -4 && (Cache.nearbyEnemies.length >= 5 && Cache.nearbyFriends.length >= 4))
+            canBuild = true;
+        if (!canBuild)
+            return;
+        TrapType trapType = TrapType.STUN;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
         MapLocation loc = rc.getLocation().add(dir);
         MapLocation loc2 = rc.getLocation().add(dir.rotateLeft());
@@ -190,19 +196,19 @@ public class Micro extends Robot {
         boolean canStun = true;
         for (Direction d : Constants.MOVEABLE_DIRECTIONS) {
             MapLocation newLoc = rc.getLocation().add(d);
-            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() == TrapType.STUN) {
+            if (rc.canSenseLocation(newLoc) && rc.senseMapInfo(newLoc).getTrapType() != TrapType.NONE) {
                 canStun = false;
                 break;
             }
         }
-        if (canStun && loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc)) {
-            rc.build(TrapType.STUN, loc);
-        } else if (canStun && rc.getLocation().isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, rc.getLocation())) {
-            rc.build(TrapType.STUN, rc.getLocation());
-        } else if (canStun && loc2.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc2)) {
-            rc.build(TrapType.STUN, loc2);
-        } else if (canStun && loc3.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(TrapType.STUN, loc3)) {
-            rc.build(TrapType.STUN, loc3);
+        if (canStun && loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+            rc.build(trapType, loc);
+        } else if (canStun && rc.getLocation().isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, rc.getLocation())) {
+            rc.build(trapType, rc.getLocation());
+        } else if (canStun && loc2.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc2)) {
+            rc.build(trapType, loc2);
+        } else if (canStun && loc3.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc3)) {
+            rc.build(trapType, loc3);
         }
     }
 
@@ -228,35 +234,34 @@ public class Micro extends Robot {
 
     private static double getRobotScore(RobotInfo r) {
         // output is between 3 and 10
-        double score = 0;
+        double attackScore = 0;
         switch (r.getAttackLevel()) { // according to DPS
-            case 0: score += 1; break;
-            case 1: score += 1.1; break;
-            case 2: score += 1.22; break;
-            case 3: score += 1.35; break;
-            case 4: score += 1.5; break;
-            case 5: score += 1.85; break;
-            case 6: score += 2.5; break;
+            case 1: attackScore += 1.05 / 0.95 - 1; break;
+            case 2: attackScore += 1.07 / 0.93 - 1; break;
+            case 3: attackScore += 1.1 / 0.9 - 1; break;
+            case 4: attackScore += 1.3 / 0.8 - 1; break;
+            case 5: attackScore += 1.35 / 0.65 - 1; break;
+            case 6: attackScore += 1.6 / 0.4 - 1; break;
         }
+        double buildScore = 0;
+        switch (r.getBuildLevel()) { // according to saved cost
+            case 1: buildScore += 0.1; break;
+            case 2: buildScore += 0.15; break;
+            case 3: buildScore += 0.2; break;
+            case 4: buildScore += 0.3; break;
+            case 5: buildScore += 0.4; break;
+            case 6: buildScore += 0.5; break;
+        }
+        double healScore = 0;
         switch (r.getHealLevel()) { // according to DPS
-            case 0: score += 1; break;
-            case 1: score += 1.08; break;
-            case 2: score += 1.16; break;
-            case 3: score += 1.26; break;
-            case 4: score += 1.3; break;
-            case 5: score += 1.35; break;
-            case 6: score += 1.66; break;
+            case 1: healScore += 1.03 / 0.95 - 1; break;
+            case 2: healScore += 1.05 / 0.9 - 1; break;
+            case 3: healScore += 1.07 / 0.85 - 1; break;
+            case 4: healScore += 1.1 / 0.85 - 1; break;
+            case 5: healScore += 1.15 / 0.85 - 1; break;
+            case 6: healScore += 1.25 / 0.75 - 1; break;
         }
-        switch (r.getBuildLevel()) { // according to cost of building
-            case 0: score += 1; break;
-            case 1: score += 1 / 0.9; break;
-            case 2: score += 1 / 0.85; break;
-            case 3: score += 1 / 0.8; break;
-            case 4: score += 1 / 0.7; break;
-            case 5: score += 1 / 0.6; break;
-            case 6: score += 1 / 0.5; break;
-        }
-        return score;
+        return 0.01 + attackScore + buildScore * 4 + healScore;
     }
 
     public static double getHealingTargetScore(RobotInfo r) {
@@ -278,61 +283,6 @@ public class Micro extends Robot {
         int timeToKill = (r.getHealth() + rc.getAttackDamage() - 1) / rc.getAttackDamage();
         score += getRobotScore(r) / timeToKill;
         return score;
-    }
-
-    private static Direction canReachInOneStep(MapLocation loc) {
-        /*
-        reach means sq_dis <= 4
-        returns null if not reachable, otherwise return the direction that can reach, including center
-         */
-        MapLocation curLoc = rc.getLocation();
-        int dis = curLoc.distanceSquaredTo(loc);
-        if (dis <= GameConstants.ATTACK_RADIUS_SQUARED) { // WARNING: assume attack and healing same radius
-            return Direction.CENTER;
-        } else if (dis > 8) {
-            return null;
-        } else {
-            // TODO out of the three, need to evaluate which move is best
-            Direction dir = rc.getLocation().directionTo(loc);
-            if (rc.canMove(dir) && curLoc.add(dir).distanceSquaredTo(loc) <= GameConstants.ATTACK_RADIUS_SQUARED)
-                return dir;
-            if (rc.canMove(dir.rotateLeft()) && curLoc.add(dir.rotateLeft()).distanceSquaredTo(loc) <= GameConstants.ATTACK_RADIUS_SQUARED)
-                return dir.rotateLeft();
-            if (rc.canMove(dir.rotateRight()) && curLoc.add(dir.rotateRight()).distanceSquaredTo(loc) <= GameConstants.ATTACK_RADIUS_SQUARED)
-                return dir.rotateRight();
-        }
-        return null;
-    }
-
-    private static boolean allowedToStandStill(MapLocation enemyLocation) {
-        if (rc.getHealth() < Constants.MIN_HEALTH_TO_STAND)
-            return false;
-        if (enemyLocation.isWithinDistanceSquared(rc.getLocation(), GameConstants.ATTACK_RADIUS_SQUARED)) {
-            return false;
-        }
-        Direction directionToUs = enemyLocation.directionTo(rc.getLocation());
-        MapLocation a = enemyLocation.add(directionToUs);
-        MapLocation b = enemyLocation.add(directionToUs.rotateLeft());
-        MapLocation c = enemyLocation.add(directionToUs.rotateRight());
-        if (MapRecorder.getPassible(a) && rc.getLocation().isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED)) {
-            // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(a, GameConstants.ATTACK_RADIUS_SQUARED))) {
-                return false;
-            }
-        }
-        if (MapRecorder.getPassible(b) && rc.getLocation().isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED)) {
-            // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(b, GameConstants.ATTACK_RADIUS_SQUARED))) {
-                return false;
-            }
-        }
-        if (MapRecorder.getPassible(c) && rc.getLocation().isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED)) {
-            // check that there are allies that can attack too
-            if (!LambdaUtil.arraysAnyMatch(Cache.nearbyFriends, r -> r.location.isWithinDistanceSquared(c, GameConstants.ATTACK_RADIUS_SQUARED))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     static class MicroDirection {
