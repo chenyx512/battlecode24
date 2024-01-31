@@ -84,6 +84,7 @@ public class PathFinder extends Robot {
         static MapLocation prevTarget = null; // previous target
         private static FastLocSet visistedLocs = new FastLocSet();
         static int currentTurnDir = 0;
+        private static int stackDepthCutoff = 8;
         static final int MAX_DEPTH = 20;
         static final int BYTECODE_CUTOFF = 6000;
 
@@ -100,7 +101,7 @@ public class PathFinder extends Robot {
             if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
                 resetPathfinding();
             }
-            Debug.printString(Debug.INFO, String.format("move%sst%d", target, stuckCnt));
+            Debug.printString(Debug.INFO, String.format("move%sst%dcnt%d", target, stuckCnt, dirStack.size));
             prevTarget = target;
             if (visistedLocs.contains(rc.getLocation())) {
                 stuckCnt++;
@@ -109,19 +110,33 @@ public class PathFinder extends Robot {
                 visistedLocs.add(rc.getLocation());
             }
             if (dirStack.size == 0) {
+                stackDepthCutoff = 8;
                 Direction dir = rc.getLocation().directionTo(target);
                 if (canMoveOrFill(dir)) {
                     return dir;
                 }
                 MapLocation loc = rc.getLocation().add(dir);
-                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                // if there is water and sideway passage, canPassOrFill will return false for the current direction
+                // if we have flag, we strictly do bugnav around water and don't take such shortcuts
+                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater() && !rc.hasFlag()) {
                     Direction dirL = dir.rotateLeft();
-                    if (canMoveOrFill(dirL)) {
-                        return dirL;
-                    }
+                    MapLocation locL = rc.getLocation().add(dirL);
                     Direction dirR = dir.rotateRight();
-                    if (canMoveOrFill(dirR)) {
-                        return dirR;
+                    MapLocation locR = rc.getLocation().add(dirR);
+                    if (target.distanceSquaredTo(locL) < target.distanceSquaredTo(locR)) {
+                        if (canMoveOrFill(dirL)) {
+                            return dirL;
+                        }
+                        if (canMoveOrFill(dirR)) {
+                            return dirR;
+                        }
+                    } else {
+                        if (canMoveOrFill(dirL)) {
+                            return dirL;
+                        }
+                        if (canMoveOrFill(dirR)) {
+                            return dirR;
+                        }
                     }
                 }
                 currentTurnDir = getTurnDir(dir);
@@ -158,14 +173,25 @@ public class PathFinder extends Robot {
                         return dir;
                     }
                     MapLocation loc = rc.getLocation().add(dir);
-                    if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater()) {
+                    if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).isWater() && !rc.hasFlag()) {
                         Direction dirL = dir.rotateLeft();
-                        if (canMoveOrFill(dirL)) {
-                            return dirL;
-                        }
+                        MapLocation locL = rc.getLocation().add(dirL);
                         Direction dirR = dir.rotateRight();
-                        if (canMoveOrFill(dirR)) {
-                            return dirR;
+                        MapLocation locR = rc.getLocation().add(dirR);
+                        if (target.distanceSquaredTo(locL) < target.distanceSquaredTo(locR)) {
+                            if (canMoveOrFill(dirL)) {
+                                return dirL;
+                            }
+                            if (canMoveOrFill(dirR)) {
+                                return dirR;
+                            }
+                        } else {
+                            if (canMoveOrFill(dirL)) {
+                                return dirL;
+                            }
+                            if (canMoveOrFill(dirR)) {
+                                return dirR;
+                            }
                         }
                     }
                     dirStack.push(dir);
@@ -184,6 +210,12 @@ public class PathFinder extends Robot {
                         dirStack.clear();
                         return null;
                     }
+                }
+                if (dirStack.size >= stackDepthCutoff) {
+                    int cutoff = stackDepthCutoff + 8;
+                    Debug.printString(Debug.PATHFINDING, "reset");
+                    resetPathfinding();
+                    stackDepthCutoff = cutoff;
                 }
                 Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());
                 if (canMoveOrFill(moveDir)) {
@@ -259,6 +291,7 @@ public class PathFinder extends Robot {
 
         // clear some of the previous data
         static void resetPathfinding() {
+            stackDepthCutoff = 8;
             dirStack.clear();
             stuckCnt = 0;
             visistedLocs.clear();
@@ -305,13 +338,13 @@ public class PathFinder extends Robot {
             if (info.isWater()) {
                 if (info.getCrumbs() > 0)
                     return true;
+                // save crumb unless stuck when we don't have much (save some for micro water removal)
+                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 5)
+                    return false;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
                 // don't waste crumb the first 150 rounds unless routesetter
                 if (rc.getRoundNum() <= 150 && SetupManager.routeSetterDestID == -1)
-                    return false;
-                // save crumb unless stuck when we don't have much (save some for micro water removal)
-                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 5)
                     return false;
                 int wall_cnt = 0;
                 boolean lastWall = false;

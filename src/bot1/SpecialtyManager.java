@@ -6,6 +6,7 @@ public class SpecialtyManager extends Robot {
     public static int duckSeqID; // a unique integer for each duck between 1-50, 0 means unset
     private static char[] duckID2seq = Constants.STRING_LEN_4200.toCharArray();
     private static int seqIDcnt;
+    public static int masterID;
     public static int buildLevel, attackLevel, healLevel;
     public static int attackCD, healCD;
     public static int oppAttackBase = SkillType.ATTACK.skillEffect;
@@ -48,13 +49,13 @@ public class SpecialtyManager extends Robot {
         if (!rc.isActionReady())
             return false;
         boolean useWater = rc.getRoundNum() > 200 && rc.senseMapInfo(rc.getLocation()).getTeamTerritory() != myTeam;
-        boolean needLevelUp = buildLevel < 4;
+        boolean needLevelUp = buildLevel < 4 && getDisToMyClosestSpawnCenter(rc.getLocation()) > 25;
         for (int i = 8; --i >= 0;) {
             MapLocation loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
-            if (needLevelUp && (loc.x + loc.y) % 2 == 0 && rc.canDig(loc)) {
+            if (needLevelUp && (loc.x + loc.y) % 2 == masterID % 2 && rc.canDig(loc)) {
                 rc.dig(loc);
             }
-            if (useWater && loc.x % 4 == 0 && loc.y % 4 == 0 && rc.canBuild(TrapType.WATER, loc)) {
+            if (useWater && loc.x % 4 == masterID % 4 && loc.y % 4 == masterID % 4 && rc.canBuild(TrapType.WATER, loc)) {
                 rc.build(TrapType.WATER, loc);
             }
         }
@@ -77,12 +78,17 @@ public class SpecialtyManager extends Robot {
             Comms.writeSyncId(duckSeqID == 50? 0 : duckSeqID);
         } else if (seqIDcnt < 50) {
             if (Comms.readSyncId() == 0) {
+                if (duckSeqID == 1)
+                    masterID = rc.getID() - 9999;
                 // my turn to report ID
                 Comms.writeSyncId(rc.getID() - 9999);
                 Debug.betterAssert(duckSeqID == seqIDcnt + 1, String.format("%d %d", duckSeqID, seqIDcnt));
                 duckSeqID = ++seqIDcnt;
                 duckID2seq[rc.getID() - 9999] = (char) duckSeqID;
             } else {
+                if (seqIDcnt == 0) {
+                    masterID = Comms.readSyncId();
+                }
                 if (Comms.readSyncId() == rc.getID() - 9999) {
                     Comms.writeSyncId(0);
                 } else {

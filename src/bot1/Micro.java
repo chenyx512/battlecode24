@@ -1,8 +1,6 @@
 package bot1;
 
 import battlecode.common.*;
-import bot1.fast.*;
-import org.omg.PortableInterceptor.HOLDING;
 
 public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;
@@ -185,7 +183,7 @@ public class Micro extends Robot {
         if (!canBuild)
             return;
 
-        TrapType trapType = SpecialtyManager.isBuilder() && rc.getCrumbs() > 5000? TrapType.EXPLOSIVE : TrapType.STUN;
+        TrapType trapType = SpecialtyManager.isBuilder() && rc.getCrumbs() > 10000? TrapType.EXPLOSIVE : TrapType.STUN;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
         MapLocation loc;
         loc = rc.getLocation();
@@ -212,26 +210,35 @@ public class Micro extends Robot {
                 rc.build(trapType, loc);
             }
         }
+
+        if (SpecialtyManager.isBuilder()) {
+            for (int i = 8; --i >= 0;) {
+                loc = rc.getLocation().add(Constants.MOVEABLE_DIRECTIONS[i]);
+                if (loc.x % 4 == SpecialtyManager.masterID % 4 && loc.y % 4 == SpecialtyManager.masterID % 4 && rc.canBuild(TrapType.WATER, loc)) {
+                    rc.build(TrapType.WATER, loc);
+                }
+            }
+        }
     }
 
     private static boolean canTrap(TrapType trapType, MapLocation loc) throws GameActionException {
-        if (rc.getCrumbs() > 5000 && trapType == TrapType.EXPLOSIVE)
+        if (trapType == TrapType.EXPLOSIVE)
             return true;
         MapLocation x;
         x = loc.add(Direction.NORTH);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.NORTHEAST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.EAST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.SOUTHEAST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.SOUTH);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.SOUTHWEST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.WEST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() != TrapType.NONE) return false;
+        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.NORTHWEST);
         return true;
     }
@@ -484,6 +491,7 @@ public class Micro extends Robot {
                         return canAttack > other.canAttack;
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
+
                     if (SpecialtyManager.isBuilder() && builderDis != other.builderDis)
                         return builderDis > other.builderDis;
                     if (canHealHigh != other.canHealHigh)
@@ -506,6 +514,7 @@ public class Micro extends Robot {
                         return canAttack > other.canAttack;
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
+
                     if (numAttackRangeNext != other.numAttackRangeNext) {
                         return numAttackRangeNext < other.numAttackRangeNext;
                     }
