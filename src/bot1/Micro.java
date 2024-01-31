@@ -31,8 +31,8 @@ public class Micro extends Robot {
             bestMicro = getBestMicro();
             if (bestMicro != null) {
                 boolean canHeal = (state == STATE_DEFENSIVE) ||
-                        (bestMicro.canAttackNext == 0 && (SpecialtyManager.isHealer() || state == STATE_HOLDING || bestMicro.canBeAttackedNext == 0));
-                if (canHeal && bestMicro.canAttack == 0 && bestMicro.canHealHigh == 0) {
+                        (bestMicro.canAttackNext == 0 && (!SpecialtyManager.isAttacker() || state == STATE_HOLDING || bestMicro.canBeAttackedNext == 0));
+                if (canHeal && !SpecialtyManager.isBuilder() && bestMicro.canAttack == 0 && bestMicro.canHealHigh == 0) {
                     tryHeal();
                 }
 
@@ -103,10 +103,16 @@ public class Micro extends Robot {
         }
         if (rc.getHealth() < 450) {
             state = STATE_DEFENSIVE;
-        }  else if (rc.getHealth() < 700 || SpecialtyManager.isBuilder()) {
-            state = STATE_HOLDING;
-        } else {
-            state = STATE_OFFENSIVE;
+        }  else {
+            boolean hold = rc.getHealth() < 700;
+            if (SpecialtyManager.isHealer() && !FlagManager.urgent &&
+                    Math.sqrt(Robot.getDisToMyClosestSpawnCenter(rc.getLocation())) > (W + H) / 12.0)
+                hold = true;
+            if (hold) {
+                state = STATE_HOLDING;
+            } else {
+                state = STATE_OFFENSIVE;
+            }
         }
         Debug.printString(Debug.MICRO, "micro" + state);
 

@@ -98,7 +98,7 @@ public class PathFinder extends Robot {
 
         static Direction getMoveDir() throws GameActionException {
             // different target? ==> previous data does not help!
-            if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 0) {
+            if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 2) {
                 resetPathfinding();
             }
             Debug.printString(Debug.INFO, String.format("move%sst%dcnt%d", target, stuckCnt, dirStack.size));
@@ -214,7 +214,7 @@ public class PathFinder extends Robot {
                 if (dirStack.size >= stackDepthCutoff) {
                     int cutoff = stackDepthCutoff + 8;
                     Debug.printString(Debug.PATHFINDING, "reset");
-                    resetPathfinding();
+                    dirStack.clear();
                     stackDepthCutoff = cutoff;
                 }
                 Direction moveDir = dirStack.size == 0 ? dirStack.dirs[0] : turn(dirStack.top());

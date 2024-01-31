@@ -25,6 +25,10 @@ public class SpecialtyManager extends Robot {
                 && duckSeqID <= Constants.NUM_BUILDER + Constants.NUM_HEALER;
     }
 
+    public static boolean isAttacker() {
+        return duckSeqID > Constants.NUM_BUILDER + Constants.NUM_HEALER;
+    }
+
     public static boolean isHealer(RobotInfo r) {
         int seq = duckID2seq[r.getID() - 9999];
         return seq > Constants.NUM_BUILDER
@@ -32,8 +36,9 @@ public class SpecialtyManager extends Robot {
     }
 
     public static boolean canHeal() {
-        if (rc.getExperience(SkillType.HEAL) == SkillType.HEAL.getExperience(4) - 1
-                && attackLevel <= 3 && (!isBuilder() && !isHealer()))
+        if (isBuilder() && rc.getExperience(SkillType.HEAL) == SkillType.HEAL.getExperience(4) - 1 && buildLevel <= 3)
+            return false;
+        if (isAttacker() && rc.getExperience(SkillType.HEAL) == SkillType.HEAL.getExperience(4) - 1 && attackLevel <= 3)
             return false;
         return true;
     }
