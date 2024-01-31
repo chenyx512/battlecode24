@@ -2,7 +2,6 @@ package bfs;
 
 import battlecode.common.*;
 import bfs.fast.*;
-import scala.collection.immutable.Stream;
 
 public class PathFinder extends Robot {
     private static MapLocation target = null;

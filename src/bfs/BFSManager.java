@@ -22,10 +22,10 @@ public class BFSManager {
         Direction.EAST,
         Direction.SOUTH,
         Direction.WEST,
-        Direction.NORTH_EAST,
-        Direction.SOUTH_EAST,
-        Direction.SOUTH_WEST,
-        Direction.NORTH_WEST
+        Direction.NORTHEAST,
+        Direction.SOUTHEAST,
+        Direction.SOUTHWEST,
+        Direction.NORTHWEST
     };
 
     /*
