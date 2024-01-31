@@ -13,6 +13,8 @@ public class Robot extends RobotPlayer {
 
     private static int lastCrumbRound, crumbStuckCount;
 
+    static BFSManager bfsManager = null;
+
     static void init() throws GameActionException {
         initHQLocs(); // also the flag manager and KillRecorder inits
     }
@@ -89,6 +91,8 @@ public class Robot extends RobotPlayer {
         Comms.push();
         Debug.bytecodeDebug += "  compushed=" + Clock.getBytecodeNum();
         MapRecorder.recordSym(1000);
+        if (rc.getRoundNum() == 200) initBFS();
+        if (bfsManager != null) bfsManager.run();
     }
 
     static boolean findCrumb() throws GameActionException {
@@ -162,6 +166,15 @@ public class Robot extends RobotPlayer {
         oppSpawnCenters[0] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[0]);
         oppSpawnCenters[1] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[1]);
         oppSpawnCenters[2] = MapRecorder.getSymmetricLoc(Robot.mySpawnCenters[2]);
+    }
+
+    public static void initBFS() throws GameActionException {
+        bfsManager = new BFSManager();
+
+        for (int i = 3; --i >= 0; ) {
+            // request BFS
+            bfsManager.requestBFS(i, mySpawnCenters[i]);
+        }
     }
 
     public static int getDisToMyClosestSpawnCenter(MapLocation loc) {

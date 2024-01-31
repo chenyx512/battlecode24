@@ -36,6 +36,7 @@ public strictfp class RobotPlayer {
                 Robot.endTurn();
 
                 Debug.bytecodeDebug += "  BCEND=" + Clock.getBytecodeNum();
+                Debug.bytecodeDebug += "  BCREM=" + Clock.getBytecodesLeft();
 //                if (Robot.isMaster) {
 //                    Debug.println(String.format("%s: %s", Util.toString(rc.getLocation()), Debug.bytecodeDebug));
 //                }

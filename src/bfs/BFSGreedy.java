@@ -31,7 +31,7 @@ public class BFSGreedy {
     public final static Direction NORTHWEST = Direction.NORTHWEST;
     public final static Direction CENTER = Direction.CENTER;
 
-    static final int MAX_BYTECODE = 1200;
+    static final int MAX_BYTECODE = 1500;
 
     BFSGreedy(BFS trueBFS){
         this.trueBFS = trueBFS;
@@ -55,6 +55,7 @@ public class BFSGreedy {
         init = true;
         // TODO: yx more efficient initialization
         vars = new int[trueBFS.vars.length];
+        applyReset();
     }
 
     /*

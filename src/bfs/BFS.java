@@ -16,6 +16,8 @@ public class BFS {
 
     static int diffE, diffNE, diffN, diffNW, diffW, diffSW, diffS, diffSE;
 
+    int temp = 0;
+
     public final static Direction NORTH = Direction.NORTH;
     public final static Direction NORTHEAST = Direction.NORTHEAST;
     public final static Direction EAST = Direction.EAST;
@@ -26,7 +28,7 @@ public class BFS {
     public final static Direction NORTHWEST = Direction.NORTHWEST;
     public final static Direction CENTER = Direction.CENTER;
 
-    static final int MAX_BYTECODE = 1200;
+    static final int MAX_BYTECODE = 1500;
 
     boolean reset = false;
 
@@ -86,11 +88,11 @@ public class BFS {
     /*
      * Returns the first location to be traversed in the queue
      */
-    MapLocation getFront(){
-        if (queueIndexBeginning >= queueIndexEnd) return null;
-        int code = (vars[queueIndexBeginning] >>> 16)&0xFFFF;
-        return new MapLocation(code/H, code%H);
-    }
+    // MapLocation getFront(){
+    //     if (queueIndexBeginning >= queueIndexEnd) return null;
+    //     int code = (vars[queueIndexBeginning] >>> 16)&0xFFFF;
+    //     return new MapLocation(code/H, code%H);
+    // }
 
     static int x, y, aux, dist;
     static MapLocation new_ml;
@@ -122,6 +124,7 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
 
             // switch((mapInfo[aux/4] >>> (4*(aux%4))) & 0xF){
             //     case 0: return false; // not visited yet
@@ -155,6 +158,7 @@ public class BFS {
             } else {
                 return false;
             }
+            temp += 1;
         }
 
         /*********************************************** SE ****************************************************/
@@ -174,6 +178,7 @@ public class BFS {
             } else {
                 return false;
             }
+            temp += 1;
         }
 
         /*********************************************** N ****************************************************/
@@ -191,6 +196,7 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
         }
 
         /*********************************************** S ****************************************************/
@@ -208,6 +214,7 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
         }
 
         /*********************************************** NW ****************************************************/
@@ -225,6 +232,7 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
         }
 
         /*********************************************** W ****************************************************/
@@ -242,6 +250,7 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
         }
 
         /*********************************************** SW ****************************************************/
@@ -259,12 +268,14 @@ public class BFS {
                         break;
                 }
             }
+            temp += 1;
         }
         return true;
     }
 
     void runBFS(){
         int code;
+        // Debug.println("Queue Index Beginning: " + queueIndexBeginning + " Queue Index End: " + queueIndexEnd);
         while(queueIndexEnd > queueIndexBeginning){
             if (Clock.getBytecodesLeft() < MAX_BYTECODE) return;
             //int b = Clock.getBytecodeNum();
@@ -295,6 +306,7 @@ public class BFS {
             //         break;
             // }
 
+            // Debug.println("Temp: " + temp);
             dist = (vars[code]&0xFFFF) + 1;
 
             if (fillWithNeutral(code)) ++queueIndexBeginning;

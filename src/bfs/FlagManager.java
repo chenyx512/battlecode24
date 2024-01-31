@@ -9,6 +9,7 @@ public class FlagManager extends RobotPlayer {
     private static int lastFlagCarryRound = -1;
 
     private static MapLocation flagCarryDestination = null;
+    private static int flagCarryDestinationID = -1;
     private static boolean broadcastInit = false;
 
     public static void init() throws GameActionException {
@@ -63,6 +64,7 @@ public class FlagManager extends RobotPlayer {
                 for (int i = 3; --i >= 0;) {
                     if (Comms.readMyflagsExists(i) == 0)
                         continue;
+
                     int cnt = Comms.readMyflagsNotSeenCnt(i);
                     final int CUTOFF = 80;
                     cnt = Math.min(cnt + 1, CUTOFF);
@@ -128,6 +130,7 @@ public class FlagManager extends RobotPlayer {
                         }
                         if (rc.canPickupFlag(flag.getLocation())) {
                             flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
+                            flagCarryDestinationID = Util.getClosestID(rc.getLocation(), Robot.mySpawnCenters);
                             carriedEnemyFlagIndex = flagIndex;
                             rc.pickupFlag(flag.getLocation());
                             hasFlag = true;
@@ -142,9 +145,11 @@ public class FlagManager extends RobotPlayer {
         if (hasFlag) {
             lastFlagCarryRound = rc.getRoundNum();
             if (Cache.closestEnemy != null && Cache.nearbyFriends.length < 2) {
+                // TODO: remove redundancy
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, Util.loc2int(Cache.closestEnemy));
                 PathFinder.tryMoveDir(Cache.closestEnemy.directionTo(rc.getLocation()));
                 flagCarryDestination = Util.getClosestLoc(Robot.mySpawnCenters);
+                flagCarryDestinationID = Util.getClosestID(rc.getLocation(), Robot.mySpawnCenters);
             } else {
                 Comms.writeOppflagsEscortLoc(carriedEnemyFlagIndex, 0);
             }
@@ -162,17 +167,21 @@ public class FlagManager extends RobotPlayer {
             // Yukoh TODO:
             // get to the fucking closest Robot.mySpawnCenter
             // which one doens't matter
-            if (rc.getID() == 11111) {
-                // print something
-                Debug.printString("xx"); // this will write to the indicator so u can view it in client
-                Debug.println("xxx"); // this will print to stdout, you hvae to run the game from terminal to view it
-//                Debug.setIndicatorDot();
-//                Debug.setIndicatorLine();
-            }
+            Direction dir = null;
 
-            PathFinder.move(flagCarryDestination);
+            // print something
+            // Debug.printString("xx"); // this will write to the indicator so u can view it in client
+            // Debug.setIndicatorDot();
+            // Debug.setIndicatorLine();
+
+            dir = Robot.bfsManager.getBestDirection(flagCarryDestinationID);
+            Debug.println("dir: " + dir + " curr location: " + rc.getLocation().x + " " + rc.getLocation().y);
+            
+            if (dir == null) PathFinder.move(flagCarryDestination);
+            else PathFinder.tryMoveDir(dir);
             Comms.writeOppflagsLoc(carriedEnemyFlagIndex, Util.loc2int(rc.getLocation()));
             Comms.writeOppflagsCarried(carriedEnemyFlagIndex, 1);
+
             if (rc.senseMapInfo(rc.getLocation()).getSpawnZoneTeam() == myTeamID) {
                 // we just captured the flag
                 Comms.writeOppflagsExists(carriedEnemyFlagIndex, 0);

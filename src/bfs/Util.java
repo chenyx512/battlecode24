@@ -64,4 +64,8 @@ public class Util extends RobotPlayer {
     static MapLocation getClosestLoc(MapLocation[] locations) {
         return getClosestLoc(rc.getLocation(), locations);
     }
+
+    static int getClosestLocID(MapLocation[] locations) {
+        return getClosestID(rc.getLocation(), locations);
+    }
 }
