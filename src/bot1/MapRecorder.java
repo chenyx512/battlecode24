@@ -7,6 +7,7 @@ public class MapRecorder extends RobotPlayer {
     private static FastLocSet reportedWalls = new FastLocSet();
     private static FastLocSet walls2report = new FastLocSet();
     private static int myWallReportID = -1;
+    private static FastLocSet knownWater = new FastLocSet();
 
     private static boolean symConfimred = false;
     // when symmetry is confirmed, all walls need to be flipped
@@ -27,10 +28,12 @@ public class MapRecorder extends RobotPlayer {
 
     public static boolean getPassible(MapLocation loc) {
         int val = vals[Util.loc2int(loc)];
-        if (val > 0)
-            return val != WALL_BIT;
-        val = vals[Util.loc2int(getSymmetricLoc(loc))];
-        return val != WALL_BIT;
+        if (val == WALL_BIT)
+            return false;
+        if (rc.hasFlag()) {
+            return !knownWater.contains(loc);
+        }
+        return true;
     }
 
     public static int getData(MapLocation loc) {
@@ -59,8 +62,10 @@ public class MapRecorder extends RobotPlayer {
             needWallFlip = false;
         }
 
-        if (!rc.isSpawned())
+        if (!rc.isSpawned()) {
+            knownWater.clear();
             return;
+        }
 
         MapInfo[] infos = rc.senseNearbyMapInfos();
         for (int i = infos.length; --i >= 0; ) {
@@ -69,6 +74,11 @@ public class MapRecorder extends RobotPlayer {
             }
             MapInfo info = infos[i];
             MapLocation loc = info.getMapLocation();
+            if (info.isWater()) {
+                knownWater.add(loc);
+            } else {
+                knownWater.remove(loc);
+            }
             int locID = Util.loc2int(loc);
             if (vals[locID] != 0)
                 continue;

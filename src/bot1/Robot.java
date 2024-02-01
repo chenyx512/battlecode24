@@ -111,7 +111,6 @@ public class Robot extends RobotPlayer {
             if (rc.getLocation() == loc) {
                 crumbStuckCount = 0;
             }
-            PathFinder.move(loc);
         }
         return false;
     }

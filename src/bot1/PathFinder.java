@@ -231,14 +231,13 @@ public class PathFinder extends Robot {
                 if (ans > MAX_DEPTH || Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
                     break;
                 }
+                Debug.setIndicatorDot(Debug.PATHFINDING, now, turnDir == 0? 255 : 0, 0, turnDir == 0? 0 : 255);
                 Direction moveDir = now.directionTo(target);
                 if (dirStack.size == 0) {
                     if (!canPass(now, moveDir)) {
-                        // obstacle encountered, rotate and add new dirs to stack
-                        while (!canPass(now, moveDir) && dirStack.size < 8) {
-                            dirStack.push(moveDir);
-                            moveDir = turn(moveDir, turnDir);
-                        }
+                        // obstacle encountered, end simulation
+                        // maybe wanna do dfs later but not now
+                        break;
                     }
                 } else {
                     if (dirStack.size > 1 && canPass(now, dirStack.top(2))) {
@@ -258,6 +257,9 @@ public class PathFinder extends Robot {
                 }
                 now = now.add(moveDir);
                 ans++;
+            }
+            if (rc.hasFlag()) {
+                Debug.println(Debug.PATHFINDING, (turnDir == 0? "L" : "R") + " turn is " + now + " taking time " + ans);
             }
             Debug.setIndicatorDot(Debug.PATHFINDING, now, turnDir == 0? 255 : 0, 0, turnDir == 0? 0 : 255);
             return ans + Util.distance(now, target);
@@ -327,7 +329,7 @@ public class PathFinder extends Robot {
                 if (info.getCrumbs() > 0)
                     return true;
                 // save crumb unless stuck when we don't have much (save some for micro water removal)
-                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 5)
+                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 10)
                     return false;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
