@@ -17,10 +17,6 @@ public class Micro extends Robot {
         // assumptions
         assert (GameConstants.ATTACK_RADIUS_SQUARED == GameConstants.HEAL_RADIUS_SQUARED) && (GameConstants.ATTACK_RADIUS_SQUARED == 4);
         if (rc.getRoundNum() <= GameConstants.SETUP_ROUNDS) {
-            if (SpecialtyManager.isBuilder() && rc.getRoundNum() > 150) {
-                BFS20.fill(); // this costs 2500 bytecode
-                tryDropTrap();
-            }
             return false;
         }
 

@@ -18,7 +18,6 @@ SCHEMA = {
         'slots': 3,
         'bits': {
             'loc': 12,
-            'dis2next': 8,
             'congestRound': 5,
         }
     },
@@ -75,6 +74,12 @@ SCHEMA = {
         'slots': 6,
         'bits': {
             'loc': 12,
+        }
+    },
+    'HQConnected': {
+        'slots': 9,
+        'bits': {
+            'val': 1,
         }
     },
 }

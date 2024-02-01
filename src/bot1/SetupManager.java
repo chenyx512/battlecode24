@@ -5,6 +5,7 @@ import bot1.fast.FastMath;
 
 public class SetupManager extends SpecialtyManager {
     private static int flagCarrierID = -1;
+    private static int flagDestID;
     private static MapLocation flagDest;
     public static int routeSetterDestID = -1;
     private static int routeSetterSourceID = -1;
@@ -29,7 +30,7 @@ public class SetupManager extends SpecialtyManager {
                 RoleAssigner.trySpawn(routeSetterSourceID);
             }
         } else {
-            if (rc.getRoundNum() > 10) {
+            if (rc.getRoundNum() > 4) {
                 RoleAssigner.initTurn();
             }
         }
@@ -49,7 +50,12 @@ public class SetupManager extends SpecialtyManager {
     private static void routeSet() throws GameActionException {
         MapLocation dest = mySpawnCenters[routeSetterDestID];
         PathFinder.move(dest);
-        if (rc.getLocation().isWithinDistanceSquared(dest, 4) || rc.getRoundNum() > 150) {
+        if (rc.getLocation().isWithinDistanceSquared(dest, 25)) {
+            Comms.writeHqconnectedVal(routeSetterSourceID * 3 + routeSetterDestID, 1);
+            Comms.writeHqconnectedVal(routeSetterDestID * 3 + routeSetterSourceID, 1);
+            routeSetterDestID = -1;
+        }
+        if (rc.getRoundNum() > 150) {
             routeSetterDestID = -1;
         }
     }
@@ -69,8 +75,9 @@ public class SetupManager extends SpecialtyManager {
                 }
             }
         } else {
-            int START_ROUND = 30;
-            int END_ROUND = 160;
+            int START_ROUND = 20;
+            int DECISION_ROUND = 70;
+            int END_ROUND = 150;
             if (rc.getRoundNum() < START_ROUND)
                 return;
             if (rc.getRoundNum() == START_ROUND) {
@@ -80,9 +87,16 @@ public class SetupManager extends SpecialtyManager {
                     if (score > bestScore) {
                         bestScore = score;
                         flagDest = mySpawnCenters[i];
+                        flagDestID = i;
                     }
                 }
                 Debug.println(Debug.INFO, String.format("flag %s going to %s", rc.getLocation().toString(), flagDest.toString()));
+            }
+            if (rc.getRoundNum() == DECISION_ROUND &&
+                    Comms.readHqconnectedVal(flagCarrierID * 3 + flagDestID) + Comms.readHqconnectedVal(flagDestID * 3 + flagCarrierID) == 0) {
+                flagDest = mySpawnCenters[flagCarrierID];
+                flagDestID = flagCarrierID;
+                Debug.println(Debug.INFO, String.format("flag %s going back to %s", rc.getLocation().toString(), flagDest.toString()));
             }
             if (!destReached && rc.getRoundNum() <= END_ROUND) {
                 if (getFlagDistance(flagCarrierID, rc.getLocation()) > 52) {
@@ -105,7 +119,14 @@ public class SetupManager extends SpecialtyManager {
                     if (getFlagDistance(flagCarrierID, loc) <= GameConstants.MIN_FLAG_SPACING_SQUARED) {
                         continue;
                     }
-                    double score = getFlagLocScore(loc) + FastMath.fakefloat() * 2;
+                    int roundsLeft = 200 - rc.getRoundNum();
+                    double rngFactor = 2;
+                    if (roundsLeft < 8) {
+                        rngFactor = 0;
+                    } else if (roundsLeft < 20) {
+                        rngFactor = 1;
+                    }
+                    double score = getFlagLocScore(loc) + FastMath.fakefloat() * rngFactor;
                     if (score > bestScore) {
                         bestScore = score;
                         bestDir = dir;
@@ -113,18 +134,21 @@ public class SetupManager extends SpecialtyManager {
                 }
                 tryMove(bestDir);
 
-                Comms.writeMyflagsLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
                 if (rc.getRoundNum() == 198) {
                     Comms.writeMyflagsOriginalLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
                     rc.dropFlag(rc.getLocation());
                 }
             }
+            Comms.writeMyflagsLoc(flagCarrierID, Util.loc2int(rc.getLocation()));
         }
     }
 
     private static double getFlagLocScore(MapLocation loc) {
         double dis2enemy = Math.sqrt(Util.getClosestDis(loc, oppSpawnCenters));
-        double dis2hq = destReached? Math.sqrt(loc.distanceSquaredTo(flagDest)) : Math.sqrt(getDisToMyClosestSpawnCenter(loc));
+        double dis2hq = Math.sqrt(getDisToMyClosestSpawnCenter(loc));
+        if (destReached) {
+            dis2hq = (dis2hq + Math.sqrt(loc.distanceSquaredTo(flagDest))) / 2;
+        }
         return dis2enemy - dis2hq;
     }
 

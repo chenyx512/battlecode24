@@ -79,6 +79,7 @@ public class PathFinder extends Robot {
         private static int stackDepthCutoff = 8;
         static final int MAX_DEPTH = 20;
         static final int BYTECODE_CUTOFF = 6000;
+        private static int lastMoveRound = -1;
 
         static Direction turn(Direction dir) {
             return currentTurnDir == 0 ? dir.rotateLeft() : dir.rotateRight();
@@ -89,6 +90,12 @@ public class PathFinder extends Robot {
         }
 
         static Direction getMoveDir() throws GameActionException {
+            if (rc.getRoundNum() == lastMoveRound) {
+                return null;
+            } else {
+                lastMoveRound = rc.getRoundNum();
+            }
+
             // different target? ==> previous data does not help!
             if (prevTarget == null || target.distanceSquaredTo(prevTarget) > 2) {
                 resetPathfinding();

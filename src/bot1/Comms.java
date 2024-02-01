@@ -17,6 +17,7 @@ public class Comms extends RobotPlayer {
     public final static int OPPTEAM_SLOTS = 1;
     public final static int ENEMY_SLOTS = 3;
     public final static int WALL_SLOTS = 6;
+    public final static int HQCONNECTED_SLOTS = 9;
 
     public static void pull() throws GameActionException {
         buf0 = rc.readSharedArray(0);
@@ -165,8 +166,8 @@ public class Comms extends RobotPlayer {
     public static int readHqLoc(int idx) throws GameActionException {
         switch (idx) {
             case 0: return ((buf0 & 7) << 9) + ((buf1 & 65408) >>> 7);
-            case 1: return ((buf2 & 1023) << 2) + ((buf3 & 49152) >>> 14);
-            case 2: return ((buf3 & 1) << 11) + ((buf4 & 65504) >>> 5);
+            case 1: return ((buf1 & 3) << 10) + ((buf2 & 65472) >>> 6);
+            case 2: return ((buf2 & 1) << 11) + ((buf3 & 65504) >>> 5);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -181,49 +182,16 @@ public class Comms extends RobotPlayer {
                 dirty1 = 1;
                 break;
             case 1:
-                buf2 = (buf2 & 64512) | ((value & 4092) >>> 2);
-                dirty2 = 1;
-                buf3 = (buf3 & 16383) | ((value & 3) << 14);
-                dirty3 = 1;
-                break;
-            case 2:
-                buf3 = (buf3 & 65534) | ((value & 2048) >>> 11);
-                dirty3 = 1;
-                buf4 = (buf4 & 31) | ((value & 2047) << 5);
-                dirty4 = 1;
-                break;
-            default:
-                Debug.failFast("Comm write param not in range"); 
-        }
-    }
-
-    public static int readHqDis2next(int idx) throws GameActionException {
-        switch (idx) {
-            case 0: return ((buf1 & 127) << 1) + ((buf2 & 32768) >>> 15);
-            case 1: return (buf3 & 16320) >>> 6;
-            case 2: return ((buf4 & 31) << 3) + ((buf5 & 57344) >>> 13);
-            default:
-                Debug.failFast("Comm read param not in range"); return -1;
-        }
-    }
-
-    public static void writeHqDis2next(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 256, "write value out of range");
-        switch (idx) {
-            case 0:
-                buf1 = (buf1 & 65408) | ((value & 254) >>> 1);
+                buf1 = (buf1 & 65532) | ((value & 3072) >>> 10);
                 dirty1 = 1;
-                buf2 = (buf2 & 32767) | ((value & 1) << 15);
+                buf2 = (buf2 & 63) | ((value & 1023) << 6);
                 dirty2 = 1;
                 break;
-            case 1:
-                buf3 = (buf3 & 49215) | (value << 6);
-                dirty3 = 1;
-                break;
             case 2:
-                buf4 = (buf4 & 65504) | ((value & 248) >>> 3);
-                dirty4 = 1;
-                buf5 = (buf5 & 8191) | ((value & 7) << 13);
-                dirty5 = 1;
+                buf2 = (buf2 & 65534) | ((value & 2048) >>> 11);
+                dirty2 = 1;
+                buf3 = (buf3 & 31) | ((value & 2047) << 5);
+                dirty3 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -232,9 +200,9 @@ public class Comms extends RobotPlayer {
 
     public static int readHqCongestround(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf2 & 31744) >>> 10;
-            case 1: return (buf3 & 62) >>> 1;
-            case 2: return (buf5 & 7936) >>> 8;
+            case 0: return (buf1 & 124) >>> 2;
+            case 1: return (buf2 & 62) >>> 1;
+            case 2: return (buf3 & 31);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -243,16 +211,16 @@ public class Comms extends RobotPlayer {
     public static void writeHqCongestround(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 32, "write value out of range");
         switch (idx) {
             case 0:
-                buf2 = (buf2 & 33791) | (value << 10);
-                dirty2 = 1;
+                buf1 = (buf1 & 65411) | (value << 2);
+                dirty1 = 1;
                 break;
             case 1:
-                buf3 = (buf3 & 65473) | (value << 1);
-                dirty3 = 1;
+                buf2 = (buf2 & 65473) | (value << 1);
+                dirty2 = 1;
                 break;
             case 2:
-                buf5 = (buf5 & 57599) | (value << 8);
-                dirty5 = 1;
+                buf3 = (buf3 & 65504) | (value);
+                dirty3 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -260,19 +228,19 @@ public class Comms extends RobotPlayer {
     }
 
     public static int readSymmetrySym() throws GameActionException {
-        return (buf5 & 224) >>> 5;
+        return (buf4 & 57344) >>> 13;
     }
 
     public static void writeSymmetrySym(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 8, "write value out of range");
-        buf5 = (buf5 & 65311) | (value << 5);
-        dirty5 = 1;
+        buf4 = (buf4 & 8191) | (value << 13);
+        dirty4 = 1;
     }
 
     public static int readMyflagsId(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return ((buf5 & 31) << 7) + ((buf6 & 65024) >>> 9);
-            case 1: return ((buf8 & 3) << 10) + ((buf9 & 65472) >>> 6);
-            case 2: return (buf12 & 32760) >>> 3;
+            case 0: return (buf4 & 8190) >>> 1;
+            case 1: return ((buf7 & 1023) << 2) + ((buf8 & 49152) >>> 14);
+            case 2: return ((buf10 & 127) << 5) + ((buf11 & 63488) >>> 11);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -281,20 +249,20 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsId(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf5 = (buf5 & 65504) | ((value & 3968) >>> 7);
-                dirty5 = 1;
-                buf6 = (buf6 & 511) | ((value & 127) << 9);
-                dirty6 = 1;
+                buf4 = (buf4 & 57345) | (value << 1);
+                dirty4 = 1;
                 break;
             case 1:
-                buf8 = (buf8 & 65532) | ((value & 3072) >>> 10);
+                buf7 = (buf7 & 64512) | ((value & 4092) >>> 2);
+                dirty7 = 1;
+                buf8 = (buf8 & 16383) | ((value & 3) << 14);
                 dirty8 = 1;
-                buf9 = (buf9 & 63) | ((value & 1023) << 6);
-                dirty9 = 1;
                 break;
             case 2:
-                buf12 = (buf12 & 32775) | (value << 3);
-                dirty12 = 1;
+                buf10 = (buf10 & 65408) | ((value & 4064) >>> 5);
+                dirty10 = 1;
+                buf11 = (buf11 & 2047) | ((value & 31) << 11);
+                dirty11 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -303,9 +271,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsExists(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf6 & 256) >>> 8;
-            case 1: return (buf9 & 32) >>> 5;
-            case 2: return (buf12 & 4) >>> 2;
+            case 0: return (buf4 & 1);
+            case 1: return (buf8 & 8192) >>> 13;
+            case 2: return (buf11 & 1024) >>> 10;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -314,16 +282,16 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsExists(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
         switch (idx) {
             case 0:
-                buf6 = (buf6 & 65279) | (value << 8);
-                dirty6 = 1;
+                buf4 = (buf4 & 65534) | (value);
+                dirty4 = 1;
                 break;
             case 1:
-                buf9 = (buf9 & 65503) | (value << 5);
-                dirty9 = 1;
+                buf8 = (buf8 & 57343) | (value << 13);
+                dirty8 = 1;
                 break;
             case 2:
-                buf12 = (buf12 & 65531) | (value << 2);
-                dirty12 = 1;
+                buf11 = (buf11 & 64511) | (value << 10);
+                dirty11 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -332,9 +300,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsLoc(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return ((buf6 & 255) << 4) + ((buf7 & 61440) >>> 12);
-            case 1: return ((buf9 & 31) << 7) + ((buf10 & 65024) >>> 9);
-            case 2: return ((buf12 & 3) << 10) + ((buf13 & 65472) >>> 6);
+            case 0: return (buf5 & 65520) >>> 4;
+            case 1: return (buf8 & 8190) >>> 1;
+            case 2: return ((buf11 & 1023) << 2) + ((buf12 & 49152) >>> 14);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -343,22 +311,18 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf6 = (buf6 & 65280) | ((value & 4080) >>> 4);
-                dirty6 = 1;
-                buf7 = (buf7 & 4095) | ((value & 15) << 12);
-                dirty7 = 1;
+                buf5 = (buf5 & 15) | (value << 4);
+                dirty5 = 1;
                 break;
             case 1:
-                buf9 = (buf9 & 65504) | ((value & 3968) >>> 7);
-                dirty9 = 1;
-                buf10 = (buf10 & 511) | ((value & 127) << 9);
-                dirty10 = 1;
+                buf8 = (buf8 & 57345) | (value << 1);
+                dirty8 = 1;
                 break;
             case 2:
-                buf12 = (buf12 & 65532) | ((value & 3072) >>> 10);
+                buf11 = (buf11 & 64512) | ((value & 4092) >>> 2);
+                dirty11 = 1;
+                buf12 = (buf12 & 16383) | ((value & 3) << 14);
                 dirty12 = 1;
-                buf13 = (buf13 & 63) | ((value & 1023) << 6);
-                dirty13 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -367,9 +331,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsOriginalLoc(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf7 & 4095);
-            case 1: return ((buf10 & 511) << 3) + ((buf11 & 57344) >>> 13);
-            case 2: return ((buf13 & 63) << 6) + ((buf14 & 64512) >>> 10);
+            case 0: return ((buf5 & 15) << 8) + ((buf6 & 65280) >>> 8);
+            case 1: return ((buf8 & 1) << 11) + ((buf9 & 65504) >>> 5);
+            case 2: return (buf12 & 16380) >>> 2;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -378,20 +342,20 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsOriginalLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf7 = (buf7 & 61440) | (value);
-                dirty7 = 1;
+                buf5 = (buf5 & 65520) | ((value & 3840) >>> 8);
+                dirty5 = 1;
+                buf6 = (buf6 & 255) | ((value & 255) << 8);
+                dirty6 = 1;
                 break;
             case 1:
-                buf10 = (buf10 & 65024) | ((value & 4088) >>> 3);
-                dirty10 = 1;
-                buf11 = (buf11 & 8191) | ((value & 7) << 13);
-                dirty11 = 1;
+                buf8 = (buf8 & 65534) | ((value & 2048) >>> 11);
+                dirty8 = 1;
+                buf9 = (buf9 & 31) | ((value & 2047) << 5);
+                dirty9 = 1;
                 break;
             case 2:
-                buf13 = (buf13 & 65472) | ((value & 4032) >>> 6);
-                dirty13 = 1;
-                buf14 = (buf14 & 1023) | ((value & 63) << 10);
-                dirty14 = 1;
+                buf12 = (buf12 & 49155) | (value << 2);
+                dirty12 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -400,9 +364,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsAssigned(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf8 & 64512) >>> 10;
-            case 1: return (buf11 & 8064) >>> 7;
-            case 2: return (buf14 & 1008) >>> 4;
+            case 0: return (buf6 & 252) >>> 2;
+            case 1: return ((buf9 & 31) << 1) + ((buf10 & 32768) >>> 15);
+            case 2: return ((buf12 & 3) << 4) + ((buf13 & 61440) >>> 12);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -411,16 +375,20 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsAssigned(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
         switch (idx) {
             case 0:
-                buf8 = (buf8 & 1023) | (value << 10);
-                dirty8 = 1;
+                buf6 = (buf6 & 65283) | (value << 2);
+                dirty6 = 1;
                 break;
             case 1:
-                buf11 = (buf11 & 57471) | (value << 7);
-                dirty11 = 1;
+                buf9 = (buf9 & 65504) | ((value & 62) >>> 1);
+                dirty9 = 1;
+                buf10 = (buf10 & 32767) | ((value & 1) << 15);
+                dirty10 = 1;
                 break;
             case 2:
-                buf14 = (buf14 & 64527) | (value << 4);
-                dirty14 = 1;
+                buf12 = (buf12 & 65532) | ((value & 48) >>> 4);
+                dirty12 = 1;
+                buf13 = (buf13 & 4095) | ((value & 15) << 12);
+                dirty13 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -429,9 +397,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsDistress(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf8 & 512) >>> 9;
-            case 1: return (buf11 & 64) >>> 6;
-            case 2: return (buf14 & 8) >>> 3;
+            case 0: return (buf6 & 2) >>> 1;
+            case 1: return (buf10 & 16384) >>> 14;
+            case 2: return (buf13 & 2048) >>> 11;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -440,16 +408,16 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsDistress(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
         switch (idx) {
             case 0:
-                buf8 = (buf8 & 65023) | (value << 9);
-                dirty8 = 1;
+                buf6 = (buf6 & 65533) | (value << 1);
+                dirty6 = 1;
                 break;
             case 1:
-                buf11 = (buf11 & 65471) | (value << 6);
-                dirty11 = 1;
+                buf10 = (buf10 & 49151) | (value << 14);
+                dirty10 = 1;
                 break;
             case 2:
-                buf14 = (buf14 & 65527) | (value << 3);
-                dirty14 = 1;
+                buf13 = (buf13 & 63487) | (value << 11);
+                dirty13 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -458,9 +426,9 @@ public class Comms extends RobotPlayer {
 
     public static int readMyflagsNotSeenCnt(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf8 & 508) >>> 2;
-            case 1: return ((buf11 & 63) << 1) + ((buf12 & 32768) >>> 15);
-            case 2: return ((buf14 & 7) << 4) + ((buf15 & 61440) >>> 12);
+            case 0: return ((buf6 & 1) << 6) + ((buf7 & 64512) >>> 10);
+            case 1: return (buf10 & 16256) >>> 7;
+            case 2: return (buf13 & 2032) >>> 4;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -469,20 +437,18 @@ public class Comms extends RobotPlayer {
     public static void writeMyflagsNotSeenCnt(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 128, "write value out of range");
         switch (idx) {
             case 0:
-                buf8 = (buf8 & 65027) | (value << 2);
-                dirty8 = 1;
+                buf6 = (buf6 & 65534) | ((value & 64) >>> 6);
+                dirty6 = 1;
+                buf7 = (buf7 & 1023) | ((value & 63) << 10);
+                dirty7 = 1;
                 break;
             case 1:
-                buf11 = (buf11 & 65472) | ((value & 126) >>> 1);
-                dirty11 = 1;
-                buf12 = (buf12 & 32767) | ((value & 1) << 15);
-                dirty12 = 1;
+                buf10 = (buf10 & 49279) | (value << 7);
+                dirty10 = 1;
                 break;
             case 2:
-                buf14 = (buf14 & 65528) | ((value & 112) >>> 4);
-                dirty14 = 1;
-                buf15 = (buf15 & 4095) | ((value & 15) << 12);
-                dirty15 = 1;
+                buf13 = (buf13 & 63503) | (value << 4);
+                dirty13 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -491,9 +457,9 @@ public class Comms extends RobotPlayer {
 
     public static int readOppflagsId(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf15 & 4095);
-            case 1: return ((buf18 & 7) << 9) + ((buf19 & 65408) >>> 7);
-            case 2: return ((buf22 & 1023) << 2) + ((buf23 & 49152) >>> 14);
+            case 0: return ((buf13 & 15) << 8) + ((buf14 & 65280) >>> 8);
+            case 1: return ((buf17 & 2047) << 1) + ((buf18 & 32768) >>> 15);
+            case 2: return ((buf20 & 3) << 10) + ((buf21 & 65472) >>> 6);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -502,20 +468,22 @@ public class Comms extends RobotPlayer {
     public static void writeOppflagsId(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
-                buf15 = (buf15 & 61440) | (value);
-                dirty15 = 1;
+                buf13 = (buf13 & 65520) | ((value & 3840) >>> 8);
+                dirty13 = 1;
+                buf14 = (buf14 & 255) | ((value & 255) << 8);
+                dirty14 = 1;
                 break;
             case 1:
-                buf18 = (buf18 & 65528) | ((value & 3584) >>> 9);
+                buf17 = (buf17 & 63488) | ((value & 4094) >>> 1);
+                dirty17 = 1;
+                buf18 = (buf18 & 32767) | ((value & 1) << 15);
                 dirty18 = 1;
-                buf19 = (buf19 & 127) | ((value & 511) << 7);
-                dirty19 = 1;
                 break;
             case 2:
-                buf22 = (buf22 & 64512) | ((value & 4092) >>> 2);
-                dirty22 = 1;
-                buf23 = (buf23 & 16383) | ((value & 3) << 14);
-                dirty23 = 1;
+                buf20 = (buf20 & 65532) | ((value & 3072) >>> 10);
+                dirty20 = 1;
+                buf21 = (buf21 & 63) | ((value & 1023) << 6);
+                dirty21 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -524,9 +492,9 @@ public class Comms extends RobotPlayer {
 
     public static int readOppflagsExists(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf16 & 32768) >>> 15;
-            case 1: return (buf19 & 64) >>> 6;
-            case 2: return (buf23 & 8192) >>> 13;
+            case 0: return (buf14 & 128) >>> 7;
+            case 1: return (buf18 & 16384) >>> 14;
+            case 2: return (buf21 & 32) >>> 5;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -535,16 +503,16 @@ public class Comms extends RobotPlayer {
     public static void writeOppflagsExists(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
         switch (idx) {
             case 0:
-                buf16 = (buf16 & 32767) | (value << 15);
-                dirty16 = 1;
+                buf14 = (buf14 & 65407) | (value << 7);
+                dirty14 = 1;
                 break;
             case 1:
-                buf19 = (buf19 & 65471) | (value << 6);
-                dirty19 = 1;
+                buf18 = (buf18 & 49151) | (value << 14);
+                dirty18 = 1;
                 break;
             case 2:
-                buf23 = (buf23 & 57343) | (value << 13);
-                dirty23 = 1;
+                buf21 = (buf21 & 65503) | (value << 5);
+                dirty21 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -552,6 +520,74 @@ public class Comms extends RobotPlayer {
     }
 
     public static int readOppflagsLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf14 & 127) << 5) + ((buf15 & 63488) >>> 11);
+            case 1: return (buf18 & 16380) >>> 2;
+            case 2: return ((buf21 & 31) << 7) + ((buf22 & 65024) >>> 9);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf14 = (buf14 & 65408) | ((value & 4064) >>> 5);
+                dirty14 = 1;
+                buf15 = (buf15 & 2047) | ((value & 31) << 11);
+                dirty15 = 1;
+                break;
+            case 1:
+                buf18 = (buf18 & 49155) | (value << 2);
+                dirty18 = 1;
+                break;
+            case 2:
+                buf21 = (buf21 & 65504) | ((value & 3968) >>> 7);
+                dirty21 = 1;
+                buf22 = (buf22 & 511) | ((value & 127) << 9);
+                dirty22 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsOriginalLoc(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return ((buf15 & 2047) << 1) + ((buf16 & 32768) >>> 15);
+            case 1: return ((buf18 & 3) << 10) + ((buf19 & 65472) >>> 6);
+            case 2: return ((buf22 & 511) << 3) + ((buf23 & 57344) >>> 13);
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeOppflagsOriginalLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf15 = (buf15 & 63488) | ((value & 4094) >>> 1);
+                dirty15 = 1;
+                buf16 = (buf16 & 32767) | ((value & 1) << 15);
+                dirty16 = 1;
+                break;
+            case 1:
+                buf18 = (buf18 & 65532) | ((value & 3072) >>> 10);
+                dirty18 = 1;
+                buf19 = (buf19 & 63) | ((value & 1023) << 6);
+                dirty19 = 1;
+                break;
+            case 2:
+                buf22 = (buf22 & 65024) | ((value & 4088) >>> 3);
+                dirty22 = 1;
+                buf23 = (buf23 & 8191) | ((value & 7) << 13);
+                dirty23 = 1;
+                break;
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readOppflagsEscortLoc(int idx) throws GameActionException {
         switch (idx) {
             case 0: return (buf16 & 32760) >>> 3;
             case 1: return ((buf19 & 63) << 6) + ((buf20 & 64512) >>> 10);
@@ -561,7 +597,7 @@ public class Comms extends RobotPlayer {
         }
     }
 
-    public static void writeOppflagsLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
+    public static void writeOppflagsEscortLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
                 buf16 = (buf16 & 32775) | (value << 3);
@@ -582,79 +618,11 @@ public class Comms extends RobotPlayer {
         }
     }
 
-    public static int readOppflagsOriginalLoc(int idx) throws GameActionException {
-        switch (idx) {
-            case 0: return ((buf16 & 7) << 9) + ((buf17 & 65408) >>> 7);
-            case 1: return ((buf20 & 1023) << 2) + ((buf21 & 49152) >>> 14);
-            case 2: return ((buf23 & 1) << 11) + ((buf24 & 65504) >>> 5);
-            default:
-                Debug.failFast("Comm read param not in range"); return -1;
-        }
-    }
-
-    public static void writeOppflagsOriginalLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
-        switch (idx) {
-            case 0:
-                buf16 = (buf16 & 65528) | ((value & 3584) >>> 9);
-                dirty16 = 1;
-                buf17 = (buf17 & 127) | ((value & 511) << 7);
-                dirty17 = 1;
-                break;
-            case 1:
-                buf20 = (buf20 & 64512) | ((value & 4092) >>> 2);
-                dirty20 = 1;
-                buf21 = (buf21 & 16383) | ((value & 3) << 14);
-                dirty21 = 1;
-                break;
-            case 2:
-                buf23 = (buf23 & 65534) | ((value & 2048) >>> 11);
-                dirty23 = 1;
-                buf24 = (buf24 & 31) | ((value & 2047) << 5);
-                dirty24 = 1;
-                break;
-            default:
-                Debug.failFast("Comm write param not in range"); 
-        }
-    }
-
-    public static int readOppflagsEscortLoc(int idx) throws GameActionException {
-        switch (idx) {
-            case 0: return ((buf17 & 127) << 5) + ((buf18 & 63488) >>> 11);
-            case 1: return (buf21 & 16380) >>> 2;
-            case 2: return ((buf24 & 31) << 7) + ((buf25 & 65024) >>> 9);
-            default:
-                Debug.failFast("Comm read param not in range"); return -1;
-        }
-    }
-
-    public static void writeOppflagsEscortLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
-        switch (idx) {
-            case 0:
-                buf17 = (buf17 & 65408) | ((value & 4064) >>> 5);
-                dirty17 = 1;
-                buf18 = (buf18 & 2047) | ((value & 31) << 11);
-                dirty18 = 1;
-                break;
-            case 1:
-                buf21 = (buf21 & 49155) | (value << 2);
-                dirty21 = 1;
-                break;
-            case 2:
-                buf24 = (buf24 & 65504) | ((value & 3968) >>> 7);
-                dirty24 = 1;
-                buf25 = (buf25 & 511) | ((value & 127) << 9);
-                dirty25 = 1;
-                break;
-            default:
-                Debug.failFast("Comm write param not in range"); 
-        }
-    }
-
     public static int readOppflagsConfirmed(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf18 & 1024) >>> 10;
-            case 1: return (buf21 & 2) >>> 1;
-            case 2: return (buf25 & 256) >>> 8;
+            case 0: return (buf16 & 4) >>> 2;
+            case 1: return (buf20 & 512) >>> 9;
+            case 2: return (buf23 & 1);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -663,16 +631,16 @@ public class Comms extends RobotPlayer {
     public static void writeOppflagsConfirmed(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
         switch (idx) {
             case 0:
-                buf18 = (buf18 & 64511) | (value << 10);
-                dirty18 = 1;
+                buf16 = (buf16 & 65531) | (value << 2);
+                dirty16 = 1;
                 break;
             case 1:
-                buf21 = (buf21 & 65533) | (value << 1);
-                dirty21 = 1;
+                buf20 = (buf20 & 65023) | (value << 9);
+                dirty20 = 1;
                 break;
             case 2:
-                buf25 = (buf25 & 65279) | (value << 8);
-                dirty25 = 1;
+                buf23 = (buf23 & 65534) | (value);
+                dirty23 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -681,9 +649,9 @@ public class Comms extends RobotPlayer {
 
     public static int readOppflagsCarried(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf18 & 512) >>> 9;
-            case 1: return (buf21 & 1);
-            case 2: return (buf25 & 128) >>> 7;
+            case 0: return (buf16 & 2) >>> 1;
+            case 1: return (buf20 & 256) >>> 8;
+            case 2: return (buf24 & 32768) >>> 15;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -692,16 +660,16 @@ public class Comms extends RobotPlayer {
     public static void writeOppflagsCarried(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
         switch (idx) {
             case 0:
-                buf18 = (buf18 & 65023) | (value << 9);
-                dirty18 = 1;
+                buf16 = (buf16 & 65533) | (value << 1);
+                dirty16 = 1;
                 break;
             case 1:
-                buf21 = (buf21 & 65534) | (value);
-                dirty21 = 1;
+                buf20 = (buf20 & 65279) | (value << 8);
+                dirty20 = 1;
                 break;
             case 2:
-                buf25 = (buf25 & 65407) | (value << 7);
-                dirty25 = 1;
+                buf24 = (buf24 & 32767) | (value << 15);
+                dirty24 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -710,9 +678,9 @@ public class Comms extends RobotPlayer {
 
     public static int readOppflagsAssigned(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return (buf18 & 504) >>> 3;
-            case 1: return (buf22 & 64512) >>> 10;
-            case 2: return (buf25 & 126) >>> 1;
+            case 0: return ((buf16 & 1) << 5) + ((buf17 & 63488) >>> 11);
+            case 1: return (buf20 & 252) >>> 2;
+            case 2: return (buf24 & 32256) >>> 9;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -721,16 +689,18 @@ public class Comms extends RobotPlayer {
     public static void writeOppflagsAssigned(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
         switch (idx) {
             case 0:
-                buf18 = (buf18 & 65031) | (value << 3);
-                dirty18 = 1;
+                buf16 = (buf16 & 65534) | ((value & 32) >>> 5);
+                dirty16 = 1;
+                buf17 = (buf17 & 2047) | ((value & 31) << 11);
+                dirty17 = 1;
                 break;
             case 1:
-                buf22 = (buf22 & 1023) | (value << 10);
-                dirty22 = 1;
+                buf20 = (buf20 & 65283) | (value << 2);
+                dirty20 = 1;
                 break;
             case 2:
-                buf25 = (buf25 & 65409) | (value << 1);
-                dirty25 = 1;
+                buf24 = (buf24 & 33279) | (value << 9);
+                dirty24 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -738,30 +708,30 @@ public class Comms extends RobotPlayer {
     }
 
     public static int readMyteamCnt() throws GameActionException {
-        return ((buf25 & 1) << 5) + ((buf26 & 63488) >>> 11);
+        return (buf24 & 504) >>> 3;
     }
 
     public static void writeMyteamCnt(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
-        buf25 = (buf25 & 65534) | ((value & 32) >>> 5);
-        dirty25 = 1;
-        buf26 = (buf26 & 2047) | ((value & 31) << 11);
-        dirty26 = 1;
+        buf24 = (buf24 & 65031) | (value << 3);
+        dirty24 = 1;
     }
 
     public static int readOppteamCnt() throws GameActionException {
-        return (buf26 & 2016) >>> 5;
+        return ((buf24 & 7) << 3) + ((buf25 & 57344) >>> 13);
     }
 
     public static void writeOppteamCnt(int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 64, "write value out of range");
-        buf26 = (buf26 & 63519) | (value << 5);
-        dirty26 = 1;
+        buf24 = (buf24 & 65528) | ((value & 56) >>> 3);
+        dirty24 = 1;
+        buf25 = (buf25 & 8191) | ((value & 7) << 13);
+        dirty25 = 1;
     }
 
     public static int readEnemyLoc(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return ((buf26 & 31) << 7) + ((buf27 & 65024) >>> 9);
-            case 1: return ((buf27 & 511) << 3) + ((buf28 & 57344) >>> 13);
-            case 2: return (buf28 & 8190) >>> 1;
+            case 0: return (buf25 & 8190) >>> 1;
+            case 1: return ((buf25 & 1) << 11) + ((buf26 & 65504) >>> 5);
+            case 2: return ((buf26 & 31) << 7) + ((buf27 & 65024) >>> 9);
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -770,20 +740,20 @@ public class Comms extends RobotPlayer {
     public static void writeEnemyLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
+                buf25 = (buf25 & 57345) | (value << 1);
+                dirty25 = 1;
+                break;
+            case 1:
+                buf25 = (buf25 & 65534) | ((value & 2048) >>> 11);
+                dirty25 = 1;
+                buf26 = (buf26 & 31) | ((value & 2047) << 5);
+                dirty26 = 1;
+                break;
+            case 2:
                 buf26 = (buf26 & 65504) | ((value & 3968) >>> 7);
                 dirty26 = 1;
                 buf27 = (buf27 & 511) | ((value & 127) << 9);
                 dirty27 = 1;
-                break;
-            case 1:
-                buf27 = (buf27 & 65024) | ((value & 4088) >>> 3);
-                dirty27 = 1;
-                buf28 = (buf28 & 8191) | ((value & 7) << 13);
-                dirty28 = 1;
-                break;
-            case 2:
-                buf28 = (buf28 & 57345) | (value << 1);
-                dirty28 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
@@ -792,12 +762,12 @@ public class Comms extends RobotPlayer {
 
     public static int readWallLoc(int idx) throws GameActionException {
         switch (idx) {
-            case 0: return ((buf28 & 1) << 11) + ((buf29 & 65504) >>> 5);
-            case 1: return ((buf29 & 31) << 7) + ((buf30 & 65024) >>> 9);
-            case 2: return ((buf30 & 511) << 3) + ((buf31 & 57344) >>> 13);
-            case 3: return (buf31 & 8190) >>> 1;
-            case 4: return ((buf31 & 1) << 11) + ((buf32 & 65504) >>> 5);
-            case 5: return ((buf32 & 31) << 7) + ((buf33 & 65024) >>> 9);
+            case 0: return ((buf27 & 511) << 3) + ((buf28 & 57344) >>> 13);
+            case 1: return (buf28 & 8190) >>> 1;
+            case 2: return ((buf28 & 1) << 11) + ((buf29 & 65504) >>> 5);
+            case 3: return ((buf29 & 31) << 7) + ((buf30 & 65024) >>> 9);
+            case 4: return ((buf30 & 511) << 3) + ((buf31 & 57344) >>> 13);
+            case 5: return (buf31 & 8190) >>> 1;
             default:
                 Debug.failFast("Comm read param not in range"); return -1;
         }
@@ -806,38 +776,95 @@ public class Comms extends RobotPlayer {
     public static void writeWallLoc(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 4096, "write value out of range");
         switch (idx) {
             case 0:
+                buf27 = (buf27 & 65024) | ((value & 4088) >>> 3);
+                dirty27 = 1;
+                buf28 = (buf28 & 8191) | ((value & 7) << 13);
+                dirty28 = 1;
+                break;
+            case 1:
+                buf28 = (buf28 & 57345) | (value << 1);
+                dirty28 = 1;
+                break;
+            case 2:
                 buf28 = (buf28 & 65534) | ((value & 2048) >>> 11);
                 dirty28 = 1;
                 buf29 = (buf29 & 31) | ((value & 2047) << 5);
                 dirty29 = 1;
                 break;
-            case 1:
+            case 3:
                 buf29 = (buf29 & 65504) | ((value & 3968) >>> 7);
                 dirty29 = 1;
                 buf30 = (buf30 & 511) | ((value & 127) << 9);
                 dirty30 = 1;
                 break;
-            case 2:
+            case 4:
                 buf30 = (buf30 & 65024) | ((value & 4088) >>> 3);
                 dirty30 = 1;
                 buf31 = (buf31 & 8191) | ((value & 7) << 13);
                 dirty31 = 1;
                 break;
-            case 3:
+            case 5:
                 buf31 = (buf31 & 57345) | (value << 1);
                 dirty31 = 1;
                 break;
-            case 4:
-                buf31 = (buf31 & 65534) | ((value & 2048) >>> 11);
+            default:
+                Debug.failFast("Comm write param not in range"); 
+        }
+    }
+
+    public static int readHqconnectedVal(int idx) throws GameActionException {
+        switch (idx) {
+            case 0: return (buf31 & 1);
+            case 1: return (buf32 & 32768) >>> 15;
+            case 2: return (buf32 & 16384) >>> 14;
+            case 3: return (buf32 & 8192) >>> 13;
+            case 4: return (buf32 & 4096) >>> 12;
+            case 5: return (buf32 & 2048) >>> 11;
+            case 6: return (buf32 & 1024) >>> 10;
+            case 7: return (buf32 & 512) >>> 9;
+            case 8: return (buf32 & 256) >>> 8;
+            default:
+                Debug.failFast("Comm read param not in range"); return -1;
+        }
+    }
+
+    public static void writeHqconnectedVal(int idx, int value) throws GameActionException {Debug.betterAssert(value >= 0 && value < 2, "write value out of range");
+        switch (idx) {
+            case 0:
+                buf31 = (buf31 & 65534) | (value);
                 dirty31 = 1;
-                buf32 = (buf32 & 31) | ((value & 2047) << 5);
+                break;
+            case 1:
+                buf32 = (buf32 & 32767) | (value << 15);
+                dirty32 = 1;
+                break;
+            case 2:
+                buf32 = (buf32 & 49151) | (value << 14);
+                dirty32 = 1;
+                break;
+            case 3:
+                buf32 = (buf32 & 57343) | (value << 13);
+                dirty32 = 1;
+                break;
+            case 4:
+                buf32 = (buf32 & 61439) | (value << 12);
                 dirty32 = 1;
                 break;
             case 5:
-                buf32 = (buf32 & 65504) | ((value & 3968) >>> 7);
+                buf32 = (buf32 & 63487) | (value << 11);
                 dirty32 = 1;
-                buf33 = (buf33 & 511) | ((value & 127) << 9);
-                dirty33 = 1;
+                break;
+            case 6:
+                buf32 = (buf32 & 64511) | (value << 10);
+                dirty32 = 1;
+                break;
+            case 7:
+                buf32 = (buf32 & 65023) | (value << 9);
+                dirty32 = 1;
+                break;
+            case 8:
+                buf32 = (buf32 & 65279) | (value << 8);
+                dirty32 = 1;
                 break;
             default:
                 Debug.failFast("Comm write param not in range"); 
