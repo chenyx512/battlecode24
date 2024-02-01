@@ -238,19 +238,7 @@ public class RoleAssigner extends RobotPlayer {
 
     private static void findBestSpawn() throws GameActionException {
         if (role >= 3 || role == -1) {
-            MapLocation missionLoc = getRoleLocation();
-            double bestScore = -Double.MAX_VALUE;
-            int bestHQID = -1;
-            for (int i = 3; --i >= 0;) {
-                MapLocation loc = Robot.mySpawnCenters[i];
-                double score = - loc.distanceSquaredTo(missionLoc);
-                score -= 1e5 * Comms.readHqCongestround(i);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestHQID = i;
-                }
-            }
-            trySpawn(bestHQID);
+            trySpawn(FastMath.rand256() % 3);
         } else {
             // for defense role, spawn the closest
             MapLocation missionLoc = getRoleLocation();

@@ -189,29 +189,30 @@ public class Micro extends Robot {
         if (!canBuild)
             return;
 
-        TrapType trapType = SpecialtyManager.isBuilder() && rc.getCrumbs() > 10000? TrapType.EXPLOSIVE : TrapType.STUN;
+        TrapType trapType = TrapType.STUN;
+        int radius = SpecialtyManager.isBuilder()? 16 : 8;
         Direction dir = rc.getLocation().directionTo(Cache.closestEnemy);
         MapLocation loc;
         loc = rc.getLocation();
-        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, radius) && rc.canBuild(trapType, loc)) {
             if (canTrap(trapType, loc)) {
                 rc.build(trapType, loc);
             }
         }
         loc = rc.getLocation().add(dir);
-        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, radius) && rc.canBuild(trapType, loc)) {
             if (canTrap(trapType, loc)) {
                 rc.build(trapType, loc);
             }
         }
         loc = rc.getLocation().add(dir.rotateLeft());
-        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, radius) && rc.canBuild(trapType, loc)) {
             if (canTrap(trapType, loc)) {
                 rc.build(trapType, loc);
             }
         }
         loc = rc.getLocation().add(dir.rotateRight());
-        if (loc.isWithinDistanceSquared(Cache.closestEnemy, 8) && rc.canBuild(trapType, loc)) {
+        if (loc.isWithinDistanceSquared(Cache.closestEnemy, radius) && rc.canBuild(trapType, loc)) {
             if (canTrap(trapType, loc)) {
                 rc.build(trapType, loc);
             }
@@ -233,19 +234,23 @@ public class Micro extends Robot {
         MapLocation x;
         x = loc.add(Direction.NORTH);
         if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
-        x = loc.add(Direction.NORTHEAST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.EAST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
-        x = loc.add(Direction.SOUTHEAST);
         if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.SOUTH);
         if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
-        x = loc.add(Direction.SOUTHWEST);
-        if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
         x = loc.add(Direction.WEST);
         if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
-        x = loc.add(Direction.NORTHWEST);
+
+        if (rc.getCrumbs() < 8000) {
+            x = loc.add(Direction.NORTHEAST);
+            if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
+            x = loc.add(Direction.SOUTHEAST);
+            if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
+            x = loc.add(Direction.SOUTHWEST);
+            if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
+            x = loc.add(Direction.NORTHWEST);
+            if (rc.canSenseLocation(x) && rc.senseMapInfo(x).getTrapType() == TrapType.STUN) return false;
+        }
         return true;
     }
 
