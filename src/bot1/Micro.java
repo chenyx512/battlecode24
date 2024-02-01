@@ -416,7 +416,8 @@ public class Micro extends Robot {
         void updateAlly(RobotInfo ally) throws GameActionException {
             if (canMove == 0) return;
             int dis = loc.distanceSquaredTo(ally.location);
-            if (dis <= 2 && blockTeammate == 0 && ally.health < Math.min(rc.getHealth(), 700) && state != STATE_DEFENSIVE) {
+            if (dis <= 2 && blockTeammate == 0
+                    && (ally.health < Math.min(rc.getHealth(), 700) && state != STATE_DEFENSIVE || ally.hasFlag)) {
                 // If I am moving adjacent to a teammate, and we are blocking that teammate's way out from the enemy
                 // that teammate must be allowed to have another way out of the enemy
                 Direction dirOut = closestEnemyLoc.directionTo(ally.location);

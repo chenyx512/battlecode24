@@ -33,14 +33,6 @@ public class PathFinder extends Robot {
     static public void escort(int flagid) throws GameActionException {
         /* To stay 1 tile away from the escorted duck to prevent congestion */
         MapLocation carrierLoc = Util.int2loc(Comms.readOppflagsLoc(flagid));
-        if (rc.getLocation().isWithinDistanceSquared(carrierLoc, 8)) {
-            // fill the water next to flag carrier to unstuck it
-            Direction dir = rc.getLocation().directionTo(carrierLoc);
-            MapLocation loc = rc.getLocation().add(dir);
-            if (rc.canFill(loc)) {
-                rc.fill(loc);
-            }
-        }
         MapLocation escortLoc = Util.int2loc(Comms.readOppflagsEscortLoc(flagid));
         if (!rc.isMovementReady())
             return;
@@ -272,19 +264,15 @@ public class PathFinder extends Robot {
         }
 
         static int getTurnDir(Direction dir) throws GameActionException {
-            MapLocation loc = rc.getLocation().add(dir);
-//            if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) != null)
-//                return FastMath.rand256() % 2;
             Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             int ansL = simulate(0, dir);
             int ansR = simulate(1, dir);
             Debug.bytecodeDebug += "  turnDir=" + Clock.getBytecodeNum();
             Debug.printString(Debug.PATHFINDING, String.format("t%d|%d", ansL, ansR));
-            if (ansL == -1 || ansR == -1 || ansL == ansR) return FastMath.rand256() % 2;
-            if (ansL <= ansR) {
+            if (ansL == ansR) return FastMath.rand256() % 2;
+            if ((ansL <= ansR && ansL != -1) || ansR == -1) {
                 return 0;
-            }
-            else {
+            } else {
                 return 1;
             }
         }

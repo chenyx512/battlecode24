@@ -132,6 +132,14 @@ public class FlagManager extends RobotPlayer {
                     }
                 } else {
                     urgent = true;
+                    if (rc.getLocation().isWithinDistanceSquared(flag.getLocation() , 8)) {
+                        // fill the water next to flag carrier to unstuck it
+                        Direction dir = rc.getLocation().directionTo(flag.getLocation());
+                        MapLocation loc = rc.getLocation().add(dir);
+                        if (rc.canFill(loc)) {
+                            rc.fill(loc);
+                        }
+                    }
                 }
             }
         }
