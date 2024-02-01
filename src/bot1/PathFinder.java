@@ -155,6 +155,10 @@ public class PathFinder extends Robot {
                 // and the duck moves away, you wanna take its spot
                 if (dirStack.size > 1 && canMoveOrFill(dirStack.top(2))) {
                     dirStack.pop(2);
+                } else if (dirStack.size == 1 && canMoveOrFill(turn(dirStack.top(), 1 - currentTurnDir))) {
+                    Direction d = turn(dirStack.top(), 1 - currentTurnDir);
+                    dirStack.pop();
+                    return d;
                 }
                 while (dirStack.size > 0 && canMoveOrFill(dirStack.top())) {
                     dirStack.pop();
@@ -218,6 +222,7 @@ public class PathFinder extends Robot {
         }
 
         static int simulate(int turnDir, Direction dir) throws GameActionException {
+            int originalTurnDir = turnDir;
             MapLocation now = rc.getLocation();
             DirectionStack dirStack = new DirectionStack();
             while (!canPass(now, dir) && dirStack.size < 8) {
@@ -231,22 +236,71 @@ public class PathFinder extends Robot {
                 if (ans > MAX_DEPTH || Clock.getBytecodesLeft() < BYTECODE_CUTOFF) {
                     break;
                 }
-                Debug.setIndicatorDot(Debug.PATHFINDING, now, turnDir == 0? 255 : 0, 0, turnDir == 0? 0 : 255);
+                Debug.setIndicatorDot(Debug.PATHFINDING, now, originalTurnDir == 0? 255 : 0, 0, originalTurnDir == 0? 0 : 255);
                 Direction moveDir = now.directionTo(target);
                 if (dirStack.size == 0) {
                     if (!canPass(now, moveDir)) {
-                        // obstacle encountered, end simulation
-                        // maybe wanna do dfs later but not now
-                        break;
+                        Direction dirL = moveDir.rotateLeft();
+                        MapLocation locL = now.add(dirL);
+                        Direction dirR = moveDir.rotateRight();
+                        MapLocation locR = now.add(dirR);
+                        if (target.distanceSquaredTo(locL) <= target.distanceSquaredTo(locR)) {
+                            if (canPass(now, dirL)) {
+                                moveDir = dirL;
+                            }  else {
+                                while (!canPass(now, moveDir) && dirStack.size < 8) {
+                                    dirStack.push(moveDir);
+                                    moveDir = turn(moveDir, 0);
+                                }
+                                turnDir = 0;
+                            }
+                        } else {
+                            if (canPass(now, dirR)) {
+                                moveDir = dirR;
+                            }  else {
+                                while (!canPass(now, moveDir) && dirStack.size < 8) {
+                                    dirStack.push(moveDir);
+                                    moveDir = turn(moveDir, 1);
+                                }
+                                turnDir = 1;
+                            }
+                        }
                     }
                 } else {
                     if (dirStack.size > 1 && canPass(now, dirStack.top(2))) {
                         dirStack.pop(2);
+                    } else if (dirStack.size == 1 && canPass(now, turn(dirStack.top(), 1 - turnDir))) {
+                        moveDir = turn(dirStack.top(), 1 - turnDir);
+                        dirStack.pop();
                     }
                     while (dirStack.size > 0 && canPass(now, dirStack.top())) {
                         dirStack.pop();
                     }
 
+                    if (dirStack.size == 0) {
+                        if (!canPass(now, moveDir)) {
+                            Direction dirL = moveDir.rotateLeft();
+                            MapLocation locL = now.add(dirL);
+                            Direction dirR = moveDir.rotateRight();
+                            MapLocation locR = now.add(dirR);
+                            if (target.distanceSquaredTo(locL) <= target.distanceSquaredTo(locR)) {
+                                if (canPass(now, dirL)) {
+                                    moveDir = dirL;
+                                } else if (canPass(now, dirR)) {
+                                    moveDir = dirR;
+                                }
+                            } else {
+                                if (canPass(now, dirR)) {
+                                    moveDir = dirR;
+                                }  else if (canPass(now, dirL)) {
+                                    moveDir = dirL;
+                                }
+                            }
+                        }
+                        if (!canPass(now, moveDir)) {
+                            dirStack.push(moveDir);
+                        }
+                    }
                     while (dirStack.size > 0 && !canPass(now, turn(dirStack.top(), turnDir))) {
                         dirStack.push(turn(dirStack.top(), turnDir));
                         if (dirStack.size > 8) {
@@ -259,9 +313,9 @@ public class PathFinder extends Robot {
                 ans++;
             }
             if (rc.hasFlag()) {
-                Debug.println(Debug.PATHFINDING, (turnDir == 0? "L" : "R") + " turn is " + now + " taking time " + ans);
+                Debug.println(Debug.PATHFINDING, (originalTurnDir == 0? "L" : "R") +
+                        " turn is " + now + " taking time " + ans);
             }
-            Debug.setIndicatorDot(Debug.PATHFINDING, now, turnDir == 0? 255 : 0, 0, turnDir == 0? 0 : 255);
             return ans + Util.distance(now, target);
         }
 
@@ -329,7 +383,7 @@ public class PathFinder extends Robot {
                 if (info.getCrumbs() > 0)
                     return true;
                 // save crumb unless stuck when we don't have much (save some for micro water removal)
-                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 10)
+                if (rc.getCrumbs() < 200 && !SpecialtyManager.isBuilder() && stuckCnt <= 5)
                     return false;
                 if (rc.canMove(dir.rotateLeft()) || rc.canMove(dir.rotateRight()))
                     return false;
@@ -365,6 +419,9 @@ public class PathFinder extends Robot {
                 if (!canE && !canW) return true;
                 return false;
             }
+            if (rc.senseRobotAtLocation(loc) != null) {
+                return FastMath.rand256() % 10 == 0; // unstucking rng
+            }
             return false;
         }
 
@@ -373,7 +430,7 @@ public class PathFinder extends Robot {
             if (!rc.onTheMap(newLoc))
                 return false;
             if (rc.canSenseLocation(newLoc)) {
-                if (rc.hasFlag() || SetupManager.routeSetterDestID != -1) {
+                if (rc.hasFlag() || SetupManager.routeSetterDestID != -1 || rc.getCrumbs() < 30) {
                     return rc.sensePassability(newLoc);
                 } else {
                     return !rc.senseMapInfo(newLoc).isWall();

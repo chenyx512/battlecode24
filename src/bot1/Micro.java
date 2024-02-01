@@ -101,10 +101,16 @@ public class Micro extends Robot {
             micros[7].updateAlly(ally);
             micros[8].updateAlly(ally);
         }
-        if (rc.getHealth() < 450) {
+        int lowBar = 450;
+        int highBar = 700;
+        if (H * W < 1600 && rc.getRoundNum() < 500 || FlagManager.urgent) {
+            highBar = 550;
+            lowBar = 350;
+        }
+        if (rc.getHealth() < lowBar) {
             state = STATE_DEFENSIVE;
         }  else {
-            boolean hold = rc.getHealth() < 700;
+            boolean hold = rc.getHealth() < highBar;
             if (SpecialtyManager.isHealer() && !FlagManager.urgent &&
                     Math.sqrt(Robot.getDisToMyClosestSpawnCenter(rc.getLocation())) > (W + H) / 12.0)
                 hold = true;

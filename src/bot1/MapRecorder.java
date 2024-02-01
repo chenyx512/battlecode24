@@ -1,13 +1,17 @@
 package bot1;
 
 import battlecode.common.*;
+import bot1.fast.FastLocIntMap;
 import bot1.fast.FastLocSet;
+
+import java.util.Set;
 
 public class MapRecorder extends RobotPlayer {
     private static FastLocSet reportedWalls = new FastLocSet();
     private static FastLocSet walls2report = new FastLocSet();
     private static int myWallReportID = -1;
-    private static FastLocSet knownWater = new FastLocSet();
+    private static FastLocIntMap knownWater = new FastLocIntMap();
+    private static FastLocSet dams = new FastLocSet();
 
     private static boolean symConfimred = false;
     // when symmetry is confirmed, all walls need to be flipped
@@ -30,8 +34,11 @@ public class MapRecorder extends RobotPlayer {
         int val = vals[Util.loc2int(loc)];
         if (val == WALL_BIT)
             return false;
-        if (rc.hasFlag()) {
-            return !knownWater.contains(loc);
+        if (rc.getRoundNum() <= 200 && dams.contains(loc))
+            return false;
+        if (rc.hasFlag() || rc.getCrumbs() < 30) {
+            int round = knownWater.getVal(loc);
+            return round == -1 || rc.getRoundNum() / 10 - round > 5;
         }
         return true;
     }
@@ -75,13 +82,16 @@ public class MapRecorder extends RobotPlayer {
             MapInfo info = infos[i];
             MapLocation loc = info.getMapLocation();
             if (info.isWater()) {
-                knownWater.add(loc);
+                knownWater.add(loc, rc.getRoundNum() / 10);
             } else {
                 knownWater.remove(loc);
             }
             int locID = Util.loc2int(loc);
             if (vals[locID] != 0)
                 continue;
+            if (info.isDam()) {
+                dams.add(loc);
+            }
 
             if (info.isWall()) {
                 vals[locID] = WALL_BIT;
@@ -198,14 +208,14 @@ public class MapRecorder extends RobotPlayer {
 
     public static MapLocation getSymmetricLoc(MapLocation loc) {
         switch (symmetry) {
-            case 0b000: case 0b001: case 0b010: case 0b011: // horizontal
+            case 0b000: case 0b001: case 0b010: case 0b011: // rotational
                 return new MapLocation(W - loc.x - 1, H - loc.y - 1);
             case 0b100: case 0b101: // vertical
                 return new MapLocation(loc.x, H - loc.y - 1);
             case 0b110:  // horizontal
                 return new MapLocation(W - loc.x - 1, loc.y);
         }
-        assert false;
-        return null;
+        Debug.failFast("impossible sym" + symmetry);
+        return new MapLocation(W - loc.x - 1, H - loc.y - 1);
     }
 }
