@@ -54,7 +54,30 @@ qual_maps = [
     'Whirlpool',
     'YearOfTheDragon',
 ]
-all_maps = early_maps + sprint1_maps + sprint2_maps + qual_maps
+hs_maps = [
+    'Alligator',
+    'Anchor',
+    'Battlefield',
+    'BreadPudding',
+    'Decision',
+    'English',
+    'Gated',
+    'Gauntlet',
+    'Hurricane',
+    'Islands',
+    'Mountain',
+    'Occulus',
+    'Randy',
+    'Skyline',
+    'Starfish',
+    'StarryNight',
+    'Swoop',
+    'TwistedTreeline',
+    'Valentine',
+    'Waterworld',
+    'WheresMyWater',
+]
+all_maps = early_maps + sprint1_maps + sprint2_maps + qual_maps + hs_maps
 # maps = "EndAround HeMustBeFreed Divergent FloodGates Diagonal Tunnels Capacitance GravitationalWaves ORV".split()
 # maps = "EndAround HeMustBeFreed Divergent FloodGates Diagonal".split()
 maps = all_maps
