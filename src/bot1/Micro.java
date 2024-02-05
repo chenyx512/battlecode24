@@ -6,7 +6,7 @@ public class Micro extends Robot {
     private static final int STATE_OFFENSIVE = 1;
     private static final int STATE_HOLDING = 2;
     private static final int STATE_DEFENSIVE = 3;
-    private static final int STATE_BUILDING = 4;
+    private static final int STATE_BUILDING = 4; // legacy, not used
     private static int state;
 
     private static MicroDirection bestMicro;
@@ -28,6 +28,7 @@ public class Micro extends Robot {
             if (bestMicro != null) {
                 boolean canHeal = (state == STATE_DEFENSIVE) ||
                         (bestMicro.canAttackNext == 0 && (!SpecialtyManager.isAttacker() || state == STATE_HOLDING || bestMicro.canBeAttackedNext == 0));
+                // we should only heal before moving if we have nothing better to do after moving
                 if (canHeal && !SpecialtyManager.isBuilder() && bestMicro.canAttack == 0 && bestMicro.canHealHigh == 0) {
                     tryHeal();
                 }
@@ -42,6 +43,7 @@ public class Micro extends Robot {
                 }
                 return true;
             } else {
+                // This means there is a thick wall separating us from the enemy, simply treat it as enemy not exist
                 Debug.printString(Debug.MICRO, "ign");
             }
         }
@@ -99,6 +101,8 @@ public class Micro extends Robot {
         }
         int lowBar = 450;
         int highBar = 700;
+        // be more aggressive on smaller map
+        // (mostly just to deal with camel_case style rush so that we get to late game safely)
         if (H * W < 1600 && rc.getRoundNum() < 500 || FlagManager.urgent) {
             highBar = 550;
             lowBar = 350;
@@ -109,6 +113,7 @@ public class Micro extends Robot {
             boolean hold = rc.getHealth() < highBar;
             if (SpecialtyManager.isHealer() && !FlagManager.urgent &&
                     Math.sqrt(Robot.getDisToMyClosestSpawnCenter(rc.getLocation())) > (W + H) / 12.0)
+                // healers don't be offensive unless our base/flag threatened
                 hold = true;
             if (hold) {
                 state = STATE_HOLDING;
@@ -124,6 +129,8 @@ public class Micro extends Robot {
             canBeAttacked |= micros[i].canBeAttackedNext;
             if (micros[i].isBetterThan(micro)) micro = micros[i];
         }
+        // if all directions are not attackable by enemy and that we can't reach any enemy according to vision range BFS
+        // ignore the enemy and give control to macro
         if (canBeAttacked == 0 && canIgnoreEnemy()) {
             return null;
         }
@@ -186,6 +193,7 @@ public class Micro extends Robot {
             return;
 
         boolean canBuild = SpecialtyManager.isBuilder() || FlagManager.urgent;
+        // only allow non-builders to build if urgent or too many friendly units in jail
         if (KillRecorder.cntDiff < -4 && (Cache.nearbyEnemies.length >= 5 && Cache.nearbyFriends.length >= 4))
             canBuild = true;
         if (!canBuild)
@@ -277,7 +285,6 @@ public class Micro extends Robot {
     }
 
     private static double getRobotScore(RobotInfo r) {
-        // output is between 3 and 10
         double attackScore = 0;
         switch (r.getAttackLevel()) { // according to DPS
             case 1: attackScore += 1.05 / 0.95 - 1; break;
@@ -330,6 +337,8 @@ public class Micro extends Robot {
     }
 
     static class MicroDirection {
+        // xsquare micro: evaluate/update each direction separately
+        // reference https://github.com/IvanGeffner/Battlecode23/blob/master/fortytwo/MicroAttacker.java
         Direction dir;
         MapLocation loc;
         int canMove;
@@ -341,12 +350,12 @@ public class Micro extends Robot {
         int canBeAttackedNext;
         int canAttackNext;
         int numAttackRangeNext;
-        int allyWithinBlastRange;
+        int allyWithinBlastRange; // legacy, not used after explosive nerf after sprint 1
         int allyCloseCnt;
         int minDistanceToEnemy = 99999999;
         int minDistanceToAlly = 99999999;
         int builderDis = 99999999;
-        int canHealLow, canHealHigh;
+        int canHealLow, canHealHigh; // high means healing non-healer, low means healer
         int disToHealerHigh = 9999999;
         int disToHealer = 9999999;
         MapLocation closestEnemyLoc;
@@ -357,7 +366,7 @@ public class Micro extends Robot {
             if (dir == Direction.CENTER || rc.canMove(dir)) {
                 canMove = 1;
             }
-            // allow micro water filling
+            // allow micro water filling when many friendly units around
             else if (rc.canFill(this.loc) && Cache.nearbyFriends.length > 5) {
                 canMove = 1;
                 needFill = 1;
@@ -450,7 +459,7 @@ public class Micro extends Robot {
                 }
             }
             if (dis <= 13)
-                allyWithinBlastRange++;
+                allyWithinBlastRange++; // legacy, not used after explosive nerf after sprint 1
             if (ally.getHealth() < 870 && !SpecialtyManager.isHealer(ally)) {
                 // first priority is to heal a non-healer
                 if (dis <= GameConstants.HEAL_RADIUS_SQUARED && rc.isActionReady()) {
@@ -477,7 +486,7 @@ public class Micro extends Robot {
             if (state != STATE_OFFENSIVE && needFill != other.needFill) // don't fill unless offensive
                 return needFill < other.needFill;
             switch (state) {
-                case STATE_BUILDING:
+                case STATE_BUILDING: // legacy, not used
                     // play safe as builder
                     if (numAttackRange - canKill != other.numAttackRange - other.canKill)
                         return numAttackRange - canKill < other.numAttackRange - other.canKill;
@@ -506,7 +515,7 @@ public class Micro extends Robot {
                     if (canKill != other.canKill)
                         return canKill > other.canKill;
 
-                    if (SpecialtyManager.isBuilder() && builderDis != other.builderDis)
+                    if (SpecialtyManager.isBuilder() && builderDis != other.builderDis) // a small attempt to separate builder
                         return builderDis > other.builderDis;
                     if (canHealHigh != other.canHealHigh)
                         return canHealHigh > other.canHealHigh;
@@ -550,6 +559,14 @@ public class Micro extends Robot {
 
                 case STATE_OFFENSIVE:
                     // when surrounding enemy at a tight choke point, someone needs to go in
+                    // this prevents getting stuck with enemy in the following bad equilibrium:
+                    /* 0 is space, w is wall, 1/2 are the 2 teams
+                    no one will go forward because that risks getting attacked by 2 enemies
+                    1ww22
+                    1w022
+                    110w2
+                    11ww2
+                     */
                     if (myTotalStrength > 900 && myTotalStrength - oppTotalStrength > 500) {
                         if (canAttack != other.canAttack)
                             return canAttack > other.canAttack;

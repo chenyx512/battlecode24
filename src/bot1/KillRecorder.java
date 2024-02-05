@@ -1,3 +1,8 @@
+/*
+This module keeps track of how many friendly / enemy bots are currently alive
+In the final bot, when we sense that we are disadvantageous by 5 unit we allow everyone (instead of builder only) to put stun trap
+actually not too useful
+ */
 package bot1;
 
 import battlecode.common.*;

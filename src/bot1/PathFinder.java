@@ -1,3 +1,4 @@
+// modified from our 2023 code
 package bot1;
 
 import battlecode.common.*;
@@ -154,7 +155,6 @@ public class PathFinder extends Robot {
                 }
             }
             else {
-                // TODO: don't understand this (why pop 2?)
                 // dxx
                 // xo
                 // x
@@ -163,6 +163,15 @@ public class PathFinder extends Robot {
                 if (dirStack.size > 1 && canMoveOrFill(dirStack.top(2))) {
                     dirStack.pop(2);
                 } else if (dirStack.size == 1 && canMoveOrFill(turn(dirStack.top(), 1 - currentTurnDir))) {
+                    /*
+                    consider bugging down around x and turning left to the location above y,
+                    the stack will contain a single direction that is down,
+                    which is blocked by y, without this special case it will turn left above y and go up
+                    w00w
+                    wx0w
+                    w0yw
+                    w00w
+                     */
                     Direction d = turn(dirStack.top(), 1 - currentTurnDir);
                     dirStack.pop();
                     return d;
@@ -421,7 +430,7 @@ public class PathFinder extends Robot {
                 boolean canE = rc.canSenseLocation(E) && rc.sensePassability(E);
                 boolean canS = rc.canSenseLocation(S) && rc.sensePassability(S);
                 boolean canW = rc.canSenseLocation(W) && rc.sensePassability(W);
-                // we must be allowed to remove water
+                // we must be allowed to remove water if it blocks a passage between EW or NS
                 if (!canN && !canS) return true;
                 if (!canE && !canW) return true;
                 return false;
@@ -433,6 +442,7 @@ public class PathFinder extends Robot {
         }
 
         static boolean canPass(MapLocation loc, Direction targetDir) throws GameActionException {
+            // used when we don't have vision, relying on MapRecorder
             MapLocation newLoc = loc.add(targetDir);
             if (!rc.onTheMap(newLoc))
                 return false;

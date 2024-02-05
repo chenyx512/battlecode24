@@ -59,6 +59,8 @@ public class FlagManager extends RobotPlayer {
                 }
             }
             if (Robot.isMaster) {
+                // the master duck sets a friendly flag to non-exist if it is in distress and not seen for 80 rounds
+                // this prevents our ducks from clogging up and trying to recover a flag that's long gone
                 for (int i = 3; --i >= 0;) {
                     if (Comms.readMyflagsExists(i) == 0)
                         continue;
@@ -89,6 +91,7 @@ public class FlagManager extends RobotPlayer {
     }
 
     public static boolean act() throws GameActionException {
+        // updates the locations and status of all flags seen
         urgent = false;
 
         boolean[] enemyFlagSeen = new boolean[3];
@@ -170,7 +173,7 @@ public class FlagManager extends RobotPlayer {
             }
             return true;
         } else {
-            // invalidate false reports of our flag due to flags returning
+            // invalidate false distress reports of our flag due to flags returning
             for (int i = 3; --i >= 0;) {
                 if (Comms.readMyflagsExists(i) == 1 && Comms.readMyflagsDistress(i) == 1) {
                     MapLocation loc = Util.int2loc(Comms.readMyflagsLoc(i));
@@ -205,9 +208,12 @@ public class FlagManager extends RobotPlayer {
 
     public static int getOppFlagIndex(FlagInfo flag) throws GameActionException {
         /*
-        index is x + y * W
-        flag ID corresponds to the starting location of the flag
-        broadcast is in order of increasing flag id
+        This is an engine hack that matches a flag to its index:
+
+        the flags from broadcast are returned in increasing order of ID,
+        and ID corresponds to the starting flag location (spawn zone), id = x + y * W
+        and from MapRecorder we can figure out the enemy spawn locations aka the flag ID,
+        which allow us to map broadcast location to flag
          */
         if (flag.getID() == Comms.readOppflagsId(0)) return 0;
         if (flag.getID() == Comms.readOppflagsId(1)) return 1;
@@ -216,6 +222,7 @@ public class FlagManager extends RobotPlayer {
         int s0 = Robot.oppSpawnCenters[0].x + Robot.oppSpawnCenters[0].y * W;
         int s1 = Robot.oppSpawnCenters[1].x + Robot.oppSpawnCenters[1].y * W;
         int s2 = Robot.oppSpawnCenters[2].x + Robot.oppSpawnCenters[2].y * W;
+        // perform if sort
         if (s0 > s1) {int tmp=s0; s0=s1; s1=tmp;}
         if (s1 > s2) {int tmp=s1; s1=s2; s2=tmp;}
         if (s0 > s1) {int tmp=s0; s0=s1; s1=tmp;}

@@ -109,6 +109,8 @@ public class SetupManager extends SpecialtyManager {
                 }
             }
             if (destReached || rc.getRoundNum() > END_ROUND) {
+                // find the locally best flag location
+                // the rng helps all the flags converge and not have one flag block the other due to distance constraint
                 Direction bestDir = Direction.CENTER;
                 double bestScore = getFlagLocScore(rc.getLocation());
                 for (Direction dir : Constants.MOVEABLE_DIRECTIONS) {

@@ -1,3 +1,6 @@
+// https://github.com/awesomelemonade/Battlecode2023/blob/master/src/finalBot/util/Cache.java
+// ideas from Producing Perfection 2023, but their implementation is much better
+// this year we have too many bytecode to waste so this doesn't matter as much
 package bot1;
 
 import battlecode.common.*;

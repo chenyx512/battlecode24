@@ -1,3 +1,4 @@
+// modified from our 2023 code
 package bot1;
 
 import battlecode.common.*;

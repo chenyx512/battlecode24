@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # https://github.com/maxwelljones14/BattleCode2023/blob/main/gen_pathing.py
+# modified for our micro
 
 import sys
 from pathlib import Path

@@ -29,6 +29,7 @@ public class RoleAssigner extends RobotPlayer {
         } else {
             updateRole();
             if (role >= 0 && role < 3 && Comms.readMyflagsAssigned(role) == 1 && rc.getRoundNum() > 200) {
+                // not useful, legacy code before we remove the duck sitting on each flag in sprint2
                 // if I am the only one guarding this flag
                 MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(role));
                 if (rc.getLocation().equals(flagLoc)) {
@@ -47,6 +48,7 @@ public class RoleAssigner extends RobotPlayer {
             }
         }
         if (rc.isSpawned()) {
+            // report congestion around spawns so other ducks don't spanw here
             int hqid = Util.getClosestID(Robot.mySpawnCenters);
             if (rc.getLocation().isAdjacentTo(Robot.mySpawnCenters[hqid])) {
                 int n = rc.senseNearbyRobots(-1, myTeam).length;
@@ -142,7 +144,7 @@ public class RoleAssigner extends RobotPlayer {
                 return getDistressScore(Comms.readMyflagsAssigned(newRole),
                         Util.int2loc(Comms.readMyflagsLoc(newRole)));
             } else {
-                return -1;
+                return -1; // below is legacy code when we had a duck sitting on each flag before sprint2
 //                MapLocation flagLoc = Util.int2loc(Comms.readMyflagsLoc(newRole));
 //                // for not distressed friendly flag, one and only one duck sits on it
 //                // only Healer sits on flag
@@ -238,9 +240,10 @@ public class RoleAssigner extends RobotPlayer {
 
     private static void findBestSpawn() throws GameActionException {
         if (role >= 3 || role == -1) {
+            // for offensive role, randomly spawn to cover the map / find flanking angle / not get clogged
             trySpawn(FastMath.rand256() % 3);
         } else {
-            // for defense role, spawn the closest
+            // for defense role, spawn the closest in terms of distance to our flag and enemy spawn (where enemy flag carrier is going)
             MapLocation missionLoc = getRoleLocation();
             double bestScore = -Double.MAX_VALUE;
             int bestHQID = -1;

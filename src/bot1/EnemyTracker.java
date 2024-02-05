@@ -1,3 +1,8 @@
+/*
+NOT USED
+I had an idea that it's best for ducks to clear threats closer to our spawn first before going offensive
+But this causes extra travel time and ducks moving too much and doing too little
+ */
 package bot1;
 
 import battlecode.common.GameActionException;
